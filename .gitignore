@@ -1,0 +1,21 @@
+# macOS
+.DS_Store
+
+# Editors
+.idea/
+.vscode/
+
+# Local environment and secrets
+.env
+.env.*
+!.env.example
+
+# Runtime data and imported project files
+data/
+uploads/
+backups/
+
+# Logs and temporary files
+*.log
+tmp/
+
