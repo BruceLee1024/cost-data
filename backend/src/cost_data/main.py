@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import sys
+import threading
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
@@ -13,12 +15,39 @@ from starlette.middleware.trustedhost import TrustedHostMiddleware
 
 from cost_data import __version__
 from cost_data.api import router
-from cost_data.backups import apply_pending_restore
+from cost_data.backups import apply_pending_restore, create_backup, prune_backups
 from cost_data.config import get_settings
 from cost_data.db import init_db
+from cost_data.db import SessionLocal
+from cost_data.logging_setup import configure_logging
+from cost_data.models import AppSetting
 
 
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
+
+
+def _run_automatic_backup() -> None:
+    settings = get_settings()
+    with SessionLocal() as session:
+        stored = session.get(AppSetting, "backup")
+        if not stored or not stored.value.get("directory"):
+            return
+        target = Path(stored.value["directory"]).expanduser()
+    today = datetime.now().date().isoformat()
+    manifests = list(target.glob("*/manifest.json")) if target.exists() else []
+    kinds_today: set[str] = set()
+    for manifest_path in manifests:
+        try:
+            payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+            if str(payload.get("created_at", "")).startswith(today):
+                kinds_today.add(str(payload.get("kind")))
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+    if "daily" not in kinds_today:
+        create_backup(target, "daily")
+    if datetime.now().weekday() == 0 and "weekly" not in kinds_today:
+        create_backup(target, "weekly")
+    prune_backups(target, settings.backup_retention_daily, settings.backup_retention_weekly)
 
 
 class LocalSecurityMiddleware(BaseHTTPMiddleware):
@@ -46,8 +75,10 @@ class LocalSecurityMiddleware(BaseHTTPMiddleware):
 
 
 def create_app() -> FastAPI:
+    configure_logging()
     apply_pending_restore()
     init_db()
+    threading.Thread(target=_run_automatic_backup, daemon=True, name="cost-data-backup").start()
     app = FastAPI(
         title="衡鉴造价库 API",
         version=__version__,

@@ -63,6 +63,20 @@ def create_backup(target_directory: Path, kind: str = "manual") -> dict[str, Any
     return {**manifest, "path": str(final_dir)}
 
 
+def prune_backups(target_directory: Path, daily: int = 7, weekly: int = 4) -> None:
+    grouped: dict[str, list[Path]] = {"daily": [], "weekly": []}
+    for manifest_path in target_directory.expanduser().glob("*/manifest.json"):
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        if manifest.get("kind") in grouped:
+            grouped[manifest["kind"]].append(manifest_path.parent)
+    for kind, keep in (("daily", daily), ("weekly", weekly)):
+        for folder in sorted(grouped[kind], reverse=True)[keep:]:
+            shutil.rmtree(folder)
+
+
 def validate_backup(backup_path: Path) -> dict[str, Any]:
     folder = backup_path.expanduser().resolve()
     manifest_path = folder / "manifest.json"
@@ -110,4 +124,3 @@ def apply_pending_restore() -> bool:
         shutil.copytree(source_raw, settings.raw_dir, dirs_exist_ok=True)
     marker.unlink()
     return True
-
