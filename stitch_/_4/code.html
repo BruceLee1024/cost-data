@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>造价云数据库 - 工作台</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#8bd6b7",
+                      "error": "#ba1a1a",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed": "#d8e2ff",
+                      "secondary-container": "#2170e4",
+                      "inverse-on-surface": "#f0f1f3",
+                      "inverse-surface": "#2e3132",
+                      "surface": "#f8f9fb",
+                      "on-primary-fixed": "#002116",
+                      "surface-container-high": "#e7e8ea",
+                      "on-primary": "#ffffff",
+                      "tertiary-fixed": "#ffdcc3",
+                      "on-secondary-fixed": "#001a42",
+                      "on-surface-variant": "#3f4944",
+                      "on-surface": "#191c1e",
+                      "tertiary-container": "#804300",
+                      "primary-container": "#065f46",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "on-tertiary-container": "#ffb87e",
+                      "surface-dim": "#d9dadc",
+                      "primary": "#004532",
+                      "surface-container": "#edeef0",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "surface-container-lowest": "#ffffff",
+                      "background": "#f8f9fb",
+                      "surface-container-highest": "#e1e2e4",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "outline": "#6f7973",
+                      "surface-variant": "#e1e2e4",
+                      "on-tertiary-fixed": "#2f1500",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#8bd6b6",
+                      "primary-fixed-dim": "#8bd6b6",
+                      "surface-container-low": "#f3f4f6",
+                      "outline-variant": "#bec9c2",
+                      "on-secondary-container": "#fefcff",
+                      "tertiary": "#5e3000",
+                      "surface-bright": "#f8f9fb",
+                      "on-error-container": "#93000a",
+                      "surface-tint": "#1b6b51",
+                      "on-secondary-fixed-variant": "#004395",
+                      "secondary": "#0058be",
+                      "on-background": "#191c1e",
+                      "on-tertiary": "#ffffff",
+                      "primary-fixed": "#a6f2d1",
+                      "on-primary-fixed-variant": "#00513b",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sidebar-width": "260px",
+                      "drawer-width": "480px",
+                      "gutter": "16px",
+                      "margin-page": "24px",
+                      "base": "4px",
+                      "row-height": "36px"
+              },
+              "fontFamily": {
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "h1": [
+                              "Inter"
+                      ],
+                      "data-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "h2": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h1": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "data-mono": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h2": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #F3F4F6;
+        }
+        .card-surface {
+            background-color: #FFFFFF;
+            border: 1px solid #E5E7EB;
+        }
+    </style>
+</head>
+<body class="bg-surface-container-low text-on-surface font-body-md text-body-md antialiased overflow-hidden">
+<!-- TopNavBar -->
+<header class="h-[52px] fixed top-0 right-0 left-[260px] z-30 border-b border-outline-variant bg-surface-container-lowest dark:bg-surface-container flex justify-between items-center px-gutter w-[calc(100%-260px)]">
+<div class="flex items-center gap-4">
+<h2 class="font-h2 text-h2 font-black text-on-surface dark:text-inverse-on-surface">个人造价数据库</h2>
+</div>
+<!-- Right side actions -->
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 text-on-surface-variant font-body-sm text-body-sm">
+<span class="material-symbols-outlined text-[18px]">cloud_done</span>
+<span>本地已同步</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-on-surface-variant hover:bg-surface-container transition-colors p-1 rounded-DEFAULT">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container transition-colors p-1 rounded-DEFAULT">
+<span class="material-symbols-outlined" data-icon="database">database</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of an engineer in a brightly lit modern office. The lighting is soft and natural. Professional minimalism style. 50-100 words." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGN2vrqa-lbWe4sYdM3MIyHn1GqCO-LHzqy5Y53u48G7n-qMe2LoCv30d5hJ8mpr3q4UmEOVBK4jyDr1IPFQ5GQEz-MJABVE-AVn50-XJNWoG27mqLDGPKHFXgL641_IBEGGm5QVkieHj_U9zZ6d3t5AdidVZya5FQL1TPVfUf7rwYdeu-fUbndxA5RIb1APW2dmMpPH6oOFLdWyznQpVLPXPt2ChC4oZRS6vALSRgMBmsC3rXC4vV-ubIJ9ZSWX-ToeDjrQ3HscGO"/>
+</div>
+</div>
+</div>
+</header>
+<!-- SideNavBar -->
+<nav class="w-[260px] h-screen fixed left-0 top-0 border-r border-outline-variant bg-surface dark:bg-surface-dim flex flex-col py-margin-page z-40">
+<div class="px-gutter mb-8">
+<h1 class="font-h1 text-h1 font-bold text-primary dark:text-on-primary-fixed-variant">造价云数据库</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">专业版工作台</p>
+</div>
+<div class="flex flex-col gap-1 flex-1 px-2">
+<a class="flex items-center gap-3 px-4 py-2 text-primary dark:text-on-primary-container bg-primary-container/10 border-r-4 border-primary font-semibold opacity-90 transition-opacity duration-150 rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined icon-fill" data-icon="dashboard">dashboard</span>
+<span>工作台</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span>项目库</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined" data-icon="search_check">search_check</span>
+<span>数据查询</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span>清单匹配</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows">compare_arrows</span>
+<span>价格对比</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span>导入任务</span>
+</a>
+</div>
+<div class="px-2 mt-auto">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors rounded-l-DEFAULT" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>设置</span>
+</a>
+</div>
+</nav>
+<!-- Main Content -->
+<main class="ml-[260px] mt-[52px] h-[calc(100vh-52px)] overflow-y-auto p-margin-page">
+<div class="max-w-[1400px] mx-auto space-y-6">
+<!-- Dashboard Header -->
+<div class="flex justify-between items-end pb-4 border-b border-outline-variant">
+<div>
+<h2 class="font-h1 text-h1 text-on-surface">今日概览</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">系统运行状态良好，资源占用处于正常水平。</p>
+</div>
+<!-- System Status Bar -->
+<div class="flex items-center gap-4 bg-surface-container-lowest border border-outline-variant px-4 py-2 rounded-DEFAULT">
+<div class="flex items-center gap-2 border-r border-outline-variant pr-4">
+<span class="w-2 h-2 rounded-full bg-[#065F46]"></span>
+<span class="font-label-caps text-label-caps text-on-surface-variant uppercase">DB HEALTH: 98%</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">backup</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Last Backup: 2h ago</span>
+</div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-12 gap-6">
+<!-- Left Column (Main Focus) -->
+<div class="col-span-12 xl:col-span-8 space-y-6">
+<!-- Active Task Tile -->
+<div class="card-surface p-6 rounded-lg flex flex-col gap-4 relative overflow-hidden">
+<!-- Subtle background decoration -->
+<div class="absolute right-0 top-0 opacity-5 pointer-events-none">
+<span class="material-symbols-outlined text-[120px]">sync</span>
+</div>
+<div class="flex justify-between items-start">
+<div>
+<h3 class="font-h2 text-h2 text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">sync</span>
+                                    运行中的导入任务
+                                </h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">正在处理批量工程数据导入...</p>
+</div>
+<span class="bg-error-container text-error px-2 py-1 rounded-DEFAULT font-label-caps text-label-caps flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">warning</span>
+                                23 个异常
+                            </span>
+</div>
+<div class="space-y-2 mt-4">
+<div class="flex justify-between font-data-mono text-data-mono text-on-surface">
+<span>Processing...</span>
+<span>68%</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full rounded-full w-[68%]" style="transition: width 0.5s ease;"></div>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>345 / 500 items</span>
+<span>Est. time: 4m 12s</span>
+</div>
+</div>
+</div>
+<!-- Recent Projects Table -->
+<div class="card-surface rounded-lg overflow-hidden flex flex-col">
+<div class="px-6 py-4 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<h3 class="font-h2 text-h2 text-on-surface">最近访问项目</h3>
+<button class="text-secondary font-body-sm text-body-sm hover:underline">View All</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-low font-label-caps text-label-caps text-on-surface-variant">
+<th class="px-4 py-2 font-normal">Project Name</th>
+<th class="px-4 py-2 font-normal">Code</th>
+<th class="px-4 py-2 font-normal text-right">Value (¥)</th>
+<th class="px-4 py-2 font-normal text-right">Last Modified</th>
+<th class="px-4 py-2 font-normal">Status</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface">
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors h-row-height cursor-pointer">
+<td class="px-4 py-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">folder</span>
+                                            市中心综合体二期工程
+                                        </td>
+<td class="px-4 py-2 font-data-mono text-data-mono">PRJ-2309-A</td>
+<td class="px-4 py-2 font-data-mono text-data-mono text-right">45,200,000.00</td>
+<td class="px-4 py-2 font-data-mono text-data-mono text-right text-on-surface-variant">2023-10-24 14:30</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">Active</span>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors h-row-height cursor-pointer">
+<td class="px-4 py-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">folder</span>
+                                            北区市政道路改造
+                                        </td>
+<td class="px-4 py-2 font-data-mono text-data-mono">PRJ-2310-C</td>
+<td class="px-4 py-2 font-data-mono text-data-mono text-right">12,550,800.00</td>
+<td class="px-4 py-2 font-data-mono text-data-mono text-right text-on-surface-variant">2023-10-23 09:15</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface-container-highest text-on-surface-variant border border-outline-variant">Draft</span>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low transition-colors h-row-height cursor-pointer">
+<td class="px-4 py-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">folder</span>
+                                            新区医院门诊楼扩建
+                                        </td>
+<td class="px-4 py-2 font-data-mono text-data-mono">PRJ-2308-H</td>
+<td class="px-4 py-2 font-data-mono text-data-mono text-right">89,100,000.00</td>
+<td class="px-4 py-2 font-data-mono text-data-mono text-right text-on-surface-variant">2023-10-21 16:45</td>
+<td class="px-4 py-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#e6f4ea] text-[#137333] border border-[#ceead6]">Active</span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column (Actions & Queries) -->
+<div class="col-span-12 xl:col-span-4 space-y-6">
+<!-- Quick Actions -->
+<div class="card-surface p-6 rounded-lg">
+<h3 class="font-h2 text-h2 text-on-surface mb-4">快捷动作</h3>
+<div class="grid grid-cols-1 gap-3">
+<button class="w-full flex items-center justify-between p-3 border border-outline-variant rounded-DEFAULT hover:border-primary hover:bg-surface-container-lowest transition-all group bg-surface-container-low">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary-container text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-primary">导入历史项目</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-primary">arrow_forward</span>
+</button>
+<button class="w-full flex items-center justify-between p-3 border border-outline-variant rounded-DEFAULT hover:border-secondary hover:bg-surface-container-lowest transition-all group bg-surface-container-low">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-secondary text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-secondary">发起新查询</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-secondary">arrow_forward</span>
+</button>
+<button class="w-full flex items-center justify-between p-3 border border-outline-variant rounded-DEFAULT hover:border-[#137333] hover:bg-surface-container-lowest transition-all group bg-surface-container-low">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#137333] text-on-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[18px]">join_inner</span>
+</div>
+<span class="font-body-md text-body-md font-semibold text-on-surface group-hover:text-[#137333]">清单匹配任务</span>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:text-[#137333]">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Saved Queries -->
+<div class="card-surface p-0 rounded-lg overflow-hidden">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-container-lowest">
+<h3 class="font-h2 text-h2 text-on-surface">最近保存的查询</h3>
+</div>
+<ul class="divide-y divide-outline-variant bg-surface-container-lowest">
+<li class="p-4 hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">钢筋材料价格波动分析</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">open_in_new</span>
+</div>
+<span class="font-data-mono text-data-mono text-[10px] text-on-surface-variant">SELECT * FROM materials WHERE type='reb' AND date &gt; '2023-01-01'</span>
+</li>
+<li class="p-4 hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">华东区土建项目综合单价</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">open_in_new</span>
+</div>
+<span class="font-data-mono text-data-mono text-[10px] text-on-surface-variant">SELECT avg(price) FROM projects WHERE region='EC' AND category='civil'</span>
+</li>
+<li class="p-4 hover:bg-surface-container-low transition-colors cursor-pointer flex flex-col gap-1">
+<div class="flex justify-between items-center">
+<span class="font-body-sm text-body-sm font-semibold text-on-surface">2023 Q3 异常清单项汇总</span>
+<span class="material-symbols-outlined text-[16px] text-on-surface-variant">open_in_new</span>
+</div>
+<span class="font-data-mono text-data-mono text-[10px] text-on-surface-variant">SELECT item_code, deviation FROM bom_items WHERE flag='warning'</span>
+</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

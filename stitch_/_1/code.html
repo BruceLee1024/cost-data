@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+
+<html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>综合单价对比 - 造价云数据库</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-primary-container": "#8bd6b7",
+                        "error": "#ba1a1a",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed": "#d8e2ff",
+                        "secondary-container": "#2170e4",
+                        "inverse-on-surface": "#f0f1f3",
+                        "inverse-surface": "#2e3132",
+                        "surface": "#f8f9fb",
+                        "on-primary-fixed": "#002116",
+                        "surface-container-high": "#e7e8ea",
+                        "on-primary": "#ffffff",
+                        "tertiary-fixed": "#ffdcc3",
+                        "on-secondary-fixed": "#001a42",
+                        "on-surface-variant": "#3f4944",
+                        "on-surface": "#191c1e",
+                        "tertiary-container": "#804300",
+                        "primary-container": "#065f46",
+                        "tertiary-fixed-dim": "#ffb77d",
+                        "on-tertiary-container": "#ffb87e",
+                        "surface-dim": "#d9dadc",
+                        "primary": "#004532",
+                        "surface-container": "#edeef0",
+                        "secondary-fixed-dim": "#adc6ff",
+                        "surface-container-lowest": "#ffffff",
+                        "background": "#f8f9fb",
+                        "surface-container-highest": "#e1e2e4",
+                        "on-tertiary-fixed-variant": "#6e3900",
+                        "outline": "#6f7973",
+                        "surface-variant": "#e1e2e4",
+                        "on-tertiary-fixed": "#2f1500",
+                        "on-secondary": "#ffffff",
+                        "inverse-primary": "#8bd6b6",
+                        "primary-fixed-dim": "#8bd6b6",
+                        "surface-container-low": "#f3f4f6",
+                        "outline-variant": "#bec9c2",
+                        "on-secondary-container": "#fefcff",
+                        "tertiary": "#5e3000",
+                        "surface-bright": "#f8f9fb",
+                        "on-error-container": "#93000a",
+                        "surface-tint": "#1b6b51",
+                        "on-secondary-fixed-variant": "#004395",
+                        "secondary": "#0058be",
+                        "on-background": "#191c1e",
+                        "on-tertiary": "#ffffff",
+                        "primary-fixed": "#a6f2d1",
+                        "on-primary-fixed-variant": "#00513b",
+                        "on-error": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "sidebar-width": "260px",
+                        "drawer-width": "480px",
+                        "gutter": "16px",
+                        "margin-page": "24px",
+                        "base": "4px",
+                        "row-height": "36px"
+                    },
+                    "fontFamily": {
+                        "body-sm": ["Inter"],
+                        "h1": ["Inter"],
+                        "data-mono": ["JetBrains Mono"],
+                        "h2": ["Inter"],
+                        "body-md": ["Inter"],
+                        "label-caps": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-sm": ["12px", { "lineHeight": "16px", "fontWeight": "400" }],
+                        "h1": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "data-mono": ["13px", { "lineHeight": "18px", "fontWeight": "400" }],
+                        "h2": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-caps": ["11px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-fill {
+            font-variation-settings: 'FILL' 1;
+        }
+        .tree-line::before {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: -18px;
+            bottom: 18px;
+            width: 1px;
+            background-color: #E5E7EB;
+        }
+        .tree-line::after {
+            content: '';
+            position: absolute;
+            left: 20px;
+            top: 18px;
+            width: 16px;
+            height: 1px;
+            background-color: #E5E7EB;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-hidden flex h-screen">
+<!-- SideNavBar -->
+<nav class="w-[260px] h-screen fixed left-0 top-0 border-r border-outline-variant bg-surface dark:bg-surface-container-low flex flex-col py-spacing-margin-page z-40 hidden md:flex">
+<div class="px-gutter mb-6">
+<h1 class="font-h1 text-h1 font-bold text-primary dark:text-on-primary-fixed-variant">造价云数据库</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">专业版工作台</p>
+</div>
+<div class="flex-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>工作台
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">inventory_2</span>项目库
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">search_check</span>数据查询
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">account_tree</span>清单匹配
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-primary dark:text-on-primary-container bg-primary-container/10 border-r-4 border-primary font-semibold font-body-md text-body-md hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all opacity-90 duration-150" href="#">
+<span class="material-symbols-outlined icon-fill">compare_arrows</span>价格对比
+            </a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">upload_file</span>导入任务
+            </a>
+</div>
+<div class="mt-auto px-2">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-high transition-colors font-body-md text-body-md" href="#">
+<span class="material-symbols-outlined">settings</span>设置
+            </a>
+<div class="mt-4 px-2 flex items-center gap-3 border-t border-outline-variant pt-4">
+<img class="w-8 h-8 rounded-full object-cover border border-outline-variant" data-alt="A professional headshot of an Asian male engineer in his 30s, wearing a clean light blue button-down shirt. The background is a brightly lit, modern office environment with blurred glass partitions. The lighting is soft and natural, emphasizing a trustworthy and competent demeanor. The overall aesthetic is clean, corporate, and modern, fitting a software interface context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCK8kmHhNgsedwAFt6FxVd1_UJ-Wjh4NOBegyFTg70UsnRfylC3hn9tA8x18wCIC-H6BdNpLlGuuHeaNbvHpa7GjJlrG3vM1mz8_7U9truUTNxIlDwCK0P9z8GVat2E8yRxIMJ430KvQFyEREGAwTU13fBCDBlCE02JqRqF9dehQ39Xcmc3eqEhrbgy2stq5YpWglimCdTsL_MFE_SKYN26LtU2r__gBT5DBXA9U9EdWurDRsaQF68ZBgg5ub0oqNfpJuDqzs0e2SUe"/>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md text-on-surface font-semibold">User Avatar</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">Cost Engineer</span>
+</div>
+</div>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="h-[52px] fixed top-0 right-0 left-0 md:left-[260px] z-30 border-b border-outline-variant bg-surface-container-lowest dark:bg-surface-container flex justify-between items-center px-gutter w-auto md:w-auto transition-all">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface p-1 rounded hover:bg-surface-container">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="font-h2 text-h2 font-black text-on-surface dark:text-inverse-on-surface hidden md:block">个人造价数据库</h2>
+<div class="relative hidden sm:block ml-4">
+<span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-on-surface-variant text-sm">search</span>
+<input class="h-8 pl-8 pr-3 rounded border border-outline-variant bg-surface text-body-sm font-body-sm w-[240px] focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none transition-all" placeholder="搜索清单项..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<span class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 bg-surface-container px-2 py-1 rounded">
+<span class="material-symbols-outlined text-[16px] text-primary">cloud_done</span> 本地已同步
+            </span>
+<div class="flex gap-2">
+<button class="text-on-surface-variant hover:bg-surface-container p-1.5 rounded transition-colors focus:ring-1 focus:ring-primary/20 outline-none">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:bg-surface-container p-1.5 rounded transition-colors focus:ring-1 focus:ring-primary/20 outline-none">
+<span class="material-symbols-outlined">database</span>
+</button>
+</div>
+<img class="w-7 h-7 rounded-full border border-outline-variant object-cover md:hidden" data-alt="A small circular avatar placeholder showing a generic user silhouette in minimalist grey tones. The background is pure white. It represents a user profile picture in a sleek, modern web application header." src="https://lh3.googleusercontent.com/aida-public/AB6AXuARUKchPxCc1-bXdjSwRdiwdhLzumiSfFga1WD76ezw-h2LGoBefDk_lHB4Zi9cnSgGNK2ulkD1w5mJMJ_8Y6skzXAYvEnobkdjG6ZmX2T0fU-5GibAGOsoD25Kc1TAIxE_PETsze2bOtD3H6RAUjpeAXVm3SeasLvBxUhQ1B-xcXSuaHCwj-oDEZ9yi4U2V3jNArU4EYUHnIkBk4-8unyA8OFNP1rxhqTef659Nq8HKCrGsFhoGKYGtnOZFuAEE6A_5W1AkBQSIVk1"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-[52px] md:pl-[260px] h-screen w-full flex flex-col bg-surface-container-low overflow-hidden">
+<!-- Action Bar -->
+<div class="flex-none px-margin-page py-3 bg-surface-container-lowest border-b border-outline-variant flex justify-between items-center z-20">
+<div class="flex items-center gap-3">
+<h2 class="font-h2 text-h2 text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">compare_arrows</span>
+                    综合单价对比
+                </h2>
+<span class="px-2 py-0.5 rounded bg-secondary-container text-on-secondary font-label-caps text-label-caps">混凝土灌注桩 (010302001)</span>
+</div>
+<div class="flex gap-2">
+<button class="px-3 h-[32px] rounded border border-outline-variant text-on-surface-variant bg-surface-container-lowest hover:bg-surface-container font-body-md text-body-md flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[18px]">download</span> 导出
+                </button>
+<button class="px-3 h-[32px] rounded bg-primary text-on-primary hover:bg-primary-container font-body-md text-body-md flex items-center gap-1 transition-colors shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span> 添加对比项
+                </button>
+</div>
+</div>
+<!-- Scrollable Content -->
+<div class="flex-1 overflow-y-auto p-margin-page grid grid-cols-1 xl:grid-cols-12 gap-margin-page content-start">
+<!-- Project Summaries (Bento Grid Style) -->
+<div class="xl:col-span-12 grid grid-cols-1 md:grid-cols-3 gap-4">
+<!-- Project A -->
+<div class="bg-surface-container-lowest rounded-lg border border-outline-variant p-4 relative overflow-hidden group hover:border-primary transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-primary"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">基准项目</span>
+<h3 class="font-h2 text-h2 text-on-surface mt-1 truncate">万科金域华府三期</h3>
+</div>
+<span class="bg-surface-container px-2 py-1 rounded text-body-sm font-data-mono text-on-surface">2023-08</span>
+</div>
+<div class="flex items-end justify-between mt-4">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">综合单价</p>
+<p class="font-data-mono text-[20px] font-bold text-on-surface mt-1">¥ 845.20<span class="text-body-sm font-normal text-on-surface-variant">/m³</span></p>
+</div>
+<div class="text-right">
+<p class="font-body-sm text-body-sm text-on-surface-variant">工程量</p>
+<p class="font-data-mono text-body-md text-on-surface">12,500.00 m³</p>
+</div>
+</div>
+</div>
+<!-- Project B -->
+<div class="bg-surface-container-lowest rounded-lg border border-outline-variant p-4 relative overflow-hidden group hover:border-secondary transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-secondary"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">对比项目一</span>
+<h3 class="font-h2 text-h2 text-on-surface mt-1 truncate">保利天悦二期地下室</h3>
+</div>
+<span class="bg-surface-container px-2 py-1 rounded text-body-sm font-data-mono text-on-surface">2023-10</span>
+</div>
+<div class="flex items-end justify-between mt-4">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">综合单价</p>
+<div class="flex items-center gap-2 mt-1">
+<p class="font-data-mono text-[20px] font-bold text-on-surface">¥ 812.50<span class="text-body-sm font-normal text-on-surface-variant">/m³</span></p>
+<span class="flex items-center text-primary text-body-sm font-data-mono bg-primary-container/10 px-1 rounded"><span class="material-symbols-outlined text-[14px]">arrow_downward</span>3.8%</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-body-sm text-body-sm text-on-surface-variant">工程量</p>
+<p class="font-data-mono text-body-md text-on-surface">8,200.00 m³</p>
+</div>
+</div>
+</div>
+<!-- Project C -->
+<div class="bg-surface-container-lowest rounded-lg border border-outline-variant p-4 relative overflow-hidden group hover:border-error transition-colors">
+<div class="absolute top-0 left-0 w-1 h-full bg-error"></div>
+<div class="flex justify-between items-start mb-2">
+<div>
+<span class="font-label-caps text-label-caps text-on-surface-variant">对比项目二</span>
+<h3 class="font-h2 text-h2 text-on-surface mt-1 truncate">华润置地中心综合体</h3>
+</div>
+<span class="bg-surface-container px-2 py-1 rounded text-body-sm font-data-mono text-on-surface">2023-11</span>
+</div>
+<div class="flex items-end justify-between mt-4">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant">综合单价</p>
+<div class="flex items-center gap-2 mt-1">
+<p class="font-data-mono text-[20px] font-bold text-on-surface">¥ 890.35<span class="text-body-sm font-normal text-on-surface-variant">/m³</span></p>
+<span class="flex items-center text-error text-body-sm font-data-mono bg-error-container/30 px-1 rounded"><span class="material-symbols-outlined text-[14px]">arrow_upward</span>5.3%</span>
+</div>
+</div>
+<div class="text-right">
+<p class="font-body-sm text-body-sm text-on-surface-variant">工程量</p>
+<p class="font-data-mono text-body-md text-on-surface">15,600.00 m³</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Main Data Grid & Chart Area -->
+<div class="xl:col-span-12 grid grid-cols-1 lg:grid-cols-3 gap-margin-page">
+<!-- Breakdown Chart -->
+<div class="lg:col-span-1 bg-surface-container-lowest border border-outline-variant rounded-lg p-4 flex flex-col">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-h2 text-h2 text-on-surface">费用组成占比</h3>
+<button class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-[20px]">more_vert</span></button>
+</div>
+<div class="flex-1 min-h-[240px] relative w-full">
+<canvas id="costBreakdownChart"></canvas>
+</div>
+</div>
+<!-- Detailed Comparison Table -->
+<div class="lg:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+<div class="px-4 py-3 border-b border-outline-variant bg-surface flex justify-between items-center">
+<h3 class="font-h2 text-h2 text-on-surface">单价构成横向对比</h3>
+<div class="flex gap-2">
+<label class="flex items-center gap-1 text-body-sm font-body-sm text-on-surface-variant cursor-pointer">
+<input checked="" class="rounded border-outline-variant text-primary focus:ring-primary rounded-sm h-3 w-3" type="checkbox"/> 显示差异率
+                            </label>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse min-w-[700px]">
+<thead>
+<tr class="border-b border-outline-variant bg-surface-container-lowest">
+<th class="px-3 py-2 font-label-caps text-label-caps text-on-surface-variant font-medium w-[180px]">费用要素</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-on-surface-variant font-medium text-right bg-primary/5">万科金域华府 (基准)</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-on-surface-variant font-medium text-right">保利天悦</th>
+<th class="px-3 py-2 font-label-caps text-label-caps text-on-surface-variant font-medium text-right">华润置地中心</th>
+</tr>
+</thead>
+<tbody class="font-data-mono text-data-mono">
+<tr class="border-b border-outline-variant hover:bg-surface-container-low h-[36px] group">
+<td class="px-3 py-1 text-on-surface font-body-md flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer">chevron_right</span> 人工费</td>
+<td class="px-3 py-1 text-right text-on-surface bg-primary/5">125.50</td>
+<td class="px-3 py-1 text-right text-on-surface">120.00 <span class="text-[10px] text-primary ml-1 block sm:inline">-4.3%</span></td>
+<td class="px-3 py-1 text-right text-on-surface">132.00 <span class="text-[10px] text-error ml-1 block sm:inline">+5.1%</span></td>
+</tr>
+<!-- Expanded Sub-items for Material -->
+<tr class="border-b border-outline-variant bg-surface-container-lowest h-[36px] group cursor-pointer" onclick="toggleTree('mat-tree')">
+<td class="px-3 py-1 text-on-surface font-body-md flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-on-surface-variant transform rotate-90 transition-transform" id="mat-icon">chevron_right</span> 材料费</td>
+<td class="px-3 py-1 text-right font-bold text-on-surface bg-primary/5">485.20</td>
+<td class="px-3 py-1 text-right font-bold text-on-surface">450.50 <span class="text-[10px] text-primary ml-1">-7.1%</span></td>
+<td class="px-3 py-1 text-right font-bold text-on-surface">510.35 <span class="text-[10px] text-error ml-1">+5.1%</span></td>
+</tr>
+<!-- Tree items (Materials) -->
+</tbody><tbody class="font-data-mono text-data-mono bg-surface-bright relative" id="mat-tree">
+<tr class="border-b border-outline-variant hover:bg-surface-container-high h-[36px] relative">
+<td class="px-3 py-1 pl-8 text-on-surface-variant font-body-sm relative tree-line">
+                                            C30水下商品混凝土
+                                            <div class="absolute left-2 top-1/2 w-3 border-t border-outline-variant"></div>
+</td>
+<td class="px-3 py-1 text-right text-on-surface-variant bg-primary/5">350.00</td>
+<td class="px-3 py-1 text-right text-on-surface-variant relative group/cell">
+                                            320.00 
+                                            <!-- Inconsistency Highlight -->
+<span class="absolute inset-0 border border-error-container bg-error-container/10 hidden group-hover/cell:block pointer-events-none rounded-sm"></span>
+<span class="material-symbols-outlined text-[14px] text-error absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/cell:opacity-100 cursor-help" title="运距差异: 本地&lt;10km, 对比项目&gt;20km">info</span>
+</td>
+<td class="px-3 py-1 text-right text-on-surface-variant">365.00</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-high h-[36px] relative">
+<td class="px-3 py-1 pl-8 text-on-surface-variant font-body-sm relative tree-line">
+                                            钢筋制安综合
+                                            <div class="absolute left-2 top-1/2 w-3 border-t border-outline-variant"></div>
+</td>
+<td class="px-3 py-1 text-right text-on-surface-variant bg-primary/5">120.20</td>
+<td class="px-3 py-1 text-right text-on-surface-variant">115.50</td>
+<td class="px-3 py-1 text-right text-on-surface-variant relative group/cell">
+                                            130.35
+                                            <span class="absolute inset-0 border border-tertiary-container bg-tertiary-container/10 hidden group-hover/cell:block pointer-events-none rounded-sm"></span>
+<span class="material-symbols-outlined text-[14px] text-tertiary-container absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/cell:opacity-100 cursor-help" title="规格差异: 包含HRB500级钢筋">info</span>
+</td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-high h-[36px] relative">
+<td class="px-3 py-1 pl-8 text-on-surface-variant font-body-sm relative tree-line">
+                                            其他辅材
+                                            <div class="absolute left-2 top-1/2 w-3 border-t border-outline-variant"></div>
+</td>
+<td class="px-3 py-1 text-right text-on-surface-variant bg-primary/5">15.00</td>
+<td class="px-3 py-1 text-right text-on-surface-variant">15.00</td>
+<td class="px-3 py-1 text-right text-on-surface-variant">15.00</td>
+</tr>
+</tbody>
+<tbody><tr class="border-b border-outline-variant hover:bg-surface-container-low h-[36px] group">
+<td class="px-3 py-1 text-on-surface font-body-md flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer">chevron_right</span> 机械费</td>
+<td class="px-3 py-1 text-right text-on-surface bg-primary/5">165.30</td>
+<td class="px-3 py-1 text-right text-on-surface">175.00 <span class="text-[10px] text-error ml-1 block sm:inline">+5.8%</span></td>
+<td class="px-3 py-1 text-right text-on-surface">160.00 <span class="text-[10px] text-primary ml-1 block sm:inline">-3.2%</span></td>
+</tr>
+<tr class="border-b border-outline-variant hover:bg-surface-container-low h-[36px] group">
+<td class="px-3 py-1 text-on-surface font-body-md flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer">chevron_right</span> 管理费</td>
+<td class="px-3 py-1 text-right text-on-surface bg-primary/5">42.20</td>
+<td class="px-3 py-1 text-right text-on-surface">40.50</td>
+<td class="px-3 py-1 text-right text-on-surface">48.00 <span class="text-[10px] text-error ml-1 block sm:inline">+13.7%</span></td>
+</tr>
+<tr class="hover:bg-surface-container-low h-[36px] group">
+<td class="px-3 py-1 text-on-surface font-body-md flex items-center gap-1"><span class="material-symbols-outlined text-[16px] text-on-surface-variant group-hover:text-primary transition-colors cursor-pointer">chevron_right</span> 利润</td>
+<td class="px-3 py-1 text-right text-on-surface bg-primary/5">27.00</td>
+<td class="px-3 py-1 text-right text-on-surface">26.50</td>
+<td class="px-3 py-1 text-right text-on-surface">40.00 <span class="text-[10px] text-error ml-1 block sm:inline">+48.1%</span></td>
+</tr>
+</tbody>
+<tfoot class="bg-surface border-t border-outline-variant font-data-mono text-data-mono font-bold">
+<tr class="h-[36px]">
+<td class="px-3 py-1 text-on-surface font-body-md">合计综合单价</td>
+<td class="px-3 py-1 text-right text-primary bg-primary/10">845.20</td>
+<td class="px-3 py-1 text-right text-on-surface">812.50</td>
+<td class="px-3 py-1 text-right text-on-surface">890.35</td>
+</tr>
+</tfoot>
+</table>
+</div>
+</div>
+</div>
+<!-- Contextual Insights / Alerts Panel -->
+<div class="xl:col-span-12 mb-8">
+<div class="bg-surface-container-lowest border border-outline-variant rounded-lg p-4">
+<h3 class="font-h2 text-h2 text-on-surface mb-3 flex items-center gap-2">
+<span class="material-symbols-outlined text-tertiary-container">info</span> 智能差异诊断
+                     </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex gap-3 p-3 rounded bg-surface-container-low border-l-4 border-error">
+<span class="material-symbols-outlined text-error mt-0.5">warning</span>
+<div>
+<h4 class="font-body-md font-semibold text-on-surface">计价口径不一致</h4>
+<p class="font-body-sm text-on-surface-variant mt-1">华润置地中心项目的人工费包含了“特殊时段施工增加费”，而基准项目未包含。建议调整口径后再比对。</p>
+<button class="mt-2 text-primary font-body-sm hover:underline">查看定额消耗量明细</button>
+</div>
+</div>
+<div class="flex gap-3 p-3 rounded bg-surface-container-low border-l-4 border-tertiary-container">
+<span class="material-symbols-outlined text-tertiary-container mt-0.5">category</span>
+<div>
+<h4 class="font-body-md font-semibold text-on-surface">材料规格差异明显</h4>
+<p class="font-body-sm text-on-surface-variant mt-1">保利天悦项目采用的商品混凝土运距较近（&lt;10km），基准项目为（&gt;20km），导致该项材料费偏低7.1%。</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Drawer Overlay (Hidden by default, used for drill-down details) -->
+<div class="fixed inset-0 bg-on-background/20 z-50 hidden" id="detailDrawer">
+<div class="absolute right-0 top-0 bottom-0 w-[480px] bg-surface-container-lowest shadow-lg border-l border-outline-variant transform translate-x-full transition-transform duration-300 flex flex-col" id="drawerContent">
+<!-- Drawer Header -->
+<div class="flex justify-between items-center px-4 py-3 border-b border-outline-variant bg-surface">
+<h3 class="font-h2 text-h2 text-on-surface">定额消耗量明细分析</h3>
+<button class="text-on-surface-variant hover:bg-surface-container p-1 rounded" onclick="closeDrawer()">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Drawer Content placeholder -->
+<div class="flex-1 p-4 overflow-y-auto">
+<p class="text-on-surface-variant font-body-sm">此处展示更深层级的工料机消耗量对拆数据...</p>
+</div>
+</div>
+</div>
+<script>
+        // Simple tree toggle logic
+        function toggleTree(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('mat-icon');
+            if (el.style.display === 'none') {
+                el.style.display = '';
+                icon.classList.add('rotate-90');
+            } else {
+                el.style.display = 'none';
+                icon.classList.remove('rotate-90');
+            }
+        }
+
+        // Chart.js implementation for Grouped Bar Chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('costBreakdownChart').getContext('2d');
+            
+            // Tailwind colors extracted for chart
+            const primaryColor = '#065f46';
+            const secondaryColor = '#2170e4';
+            const tertiaryColor = '#ba1a1a'; // using error color for contrast in C
+            
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['人工费', '材料费', '机械费', '管理/利润'],
+                    datasets: [
+                        {
+                            label: '基准 (万科)',
+                            data: [125.5, 485.2, 165.3, 69.2],
+                            backgroundColor: primaryColor,
+                            borderRadius: 2
+                        },
+                        {
+                            label: '对比一 (保利)',
+                            data: [120.0, 450.5, 175.0, 67.0],
+                            backgroundColor: secondaryColor,
+                            borderRadius: 2
+                        },
+                        {
+                            label: '对比二 (华润)',
+                            data: [132.0, 510.35, 160.0, 88.0],
+                            backgroundColor: '#8bd6b7', // on-primary-container
+                            borderRadius: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    family: 'Inter',
+                                    size: 11
+                                },
+                                usePointStyle: true,
+                                boxWidth: 8
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#191c1e',
+                            titleFont: { family: 'Inter', size: 12 },
+                            bodyFont: { family: 'JetBrains Mono', size: 12 },
+                            padding: 10,
+                            cornerRadius: 4
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false, drawBorder: false },
+                            ticks: { font: { family: 'Inter', size: 11 }, color: '#3f4944' }
+                        },
+                        y: {
+                            grid: { color: '#e5e7eb', drawBorder: false },
+                            ticks: { font: { family: 'JetBrains Mono', size: 11 }, color: '#3f4944' }
+                        }
+                    }
+                }
+            });
+        });
+
+        // Drawer logic stubs
+        function openDrawer() {
+            document.getElementById('detailDrawer').classList.remove('hidden');
+            setTimeout(() => {
+                document.getElementById('drawerContent').classList.remove('translate-x-full');
+            }, 10);
+        }
+        function closeDrawer() {
+            document.getElementById('drawerContent').classList.add('translate-x-full');
+            setTimeout(() => {
+                document.getElementById('detailDrawer').classList.add('hidden');
+            }, 300);
+        }
+    </script>
+</body></html>

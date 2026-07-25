@@ -1,0 +1,23 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with: { version: "0.11.8", python-version: "3.13" }
+      - uses: pnpm/action-setup@v4
+        with: { version: "10.28.2" }
+      - uses: actions/setup-node@v4
+        with: { node-version: "22.22.3", cache: pnpm, cache-dependency-path: frontend/pnpm-lock.yaml }
+      - run: uv sync --locked
+        working-directory: backend
+      - run: uv run pytest
+        working-directory: backend
+      - run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      - run: pnpm test -- --run
+        working-directory: frontend
+      - run: pnpm build
+        working-directory: frontend

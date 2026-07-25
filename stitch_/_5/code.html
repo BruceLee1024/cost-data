@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+
+<html class="light" lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>导入质量报告</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-primary-container": "#8bd6b7",
+                      "error": "#ba1a1a",
+                      "error-container": "#ffdad6",
+                      "secondary-fixed": "#d8e2ff",
+                      "secondary-container": "#2170e4",
+                      "inverse-on-surface": "#f0f1f3",
+                      "inverse-surface": "#2e3132",
+                      "surface": "#f8f9fb",
+                      "on-primary-fixed": "#002116",
+                      "surface-container-high": "#e7e8ea",
+                      "on-primary": "#ffffff",
+                      "tertiary-fixed": "#ffdcc3",
+                      "on-secondary-fixed": "#001a42",
+                      "on-surface-variant": "#3f4944",
+                      "on-surface": "#191c1e",
+                      "tertiary-container": "#804300",
+                      "primary-container": "#065f46",
+                      "tertiary-fixed-dim": "#ffb77d",
+                      "on-tertiary-container": "#ffb87e",
+                      "surface-dim": "#d9dadc",
+                      "primary": "#004532",
+                      "surface-container": "#edeef0",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "surface-container-lowest": "#ffffff",
+                      "background": "#f8f9fb",
+                      "surface-container-highest": "#e1e2e4",
+                      "on-tertiary-fixed-variant": "#6e3900",
+                      "outline": "#6f7973",
+                      "surface-variant": "#e1e2e4",
+                      "on-tertiary-fixed": "#2f1500",
+                      "on-secondary": "#ffffff",
+                      "inverse-primary": "#8bd6b6",
+                      "primary-fixed-dim": "#8bd6b6",
+                      "surface-container-low": "#f3f4f6",
+                      "outline-variant": "#bec9c2",
+                      "on-secondary-container": "#fefcff",
+                      "tertiary": "#5e3000",
+                      "surface-bright": "#f8f9fb",
+                      "on-error-container": "#93000a",
+                      "surface-tint": "#1b6b51",
+                      "on-secondary-fixed-variant": "#004395",
+                      "secondary": "#0058be",
+                      "on-background": "#191c1e",
+                      "on-tertiary": "#ffffff",
+                      "primary-fixed": "#a6f2d1",
+                      "on-primary-fixed-variant": "#00513b",
+                      "on-error": "#ffffff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "sidebar-width": "260px",
+                      "drawer-width": "480px",
+                      "gutter": "16px",
+                      "margin-page": "24px",
+                      "base": "4px",
+                      "row-height": "36px"
+              },
+              "fontFamily": {
+                      "body-sm": [
+                              "Inter"
+                      ],
+                      "h1": [
+                              "Inter"
+                      ],
+                      "data-mono": [
+                              "JetBrains Mono"
+                      ],
+                      "h2": [
+                              "Inter"
+                      ],
+                      "body-md": [
+                              "Inter"
+                      ],
+                      "label-caps": [
+                              "Inter"
+                      ]
+              },
+              "fontSize": {
+                      "body-sm": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h1": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "data-mono": [
+                              "13px",
+                              {
+                                      "lineHeight": "18px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "h2": [
+                              "18px",
+                              {
+                                      "lineHeight": "28px",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-caps": [
+                              "11px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "700"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        .table-row-hover:hover { background-color: #f8f9fb; }
+        .bg-gradient-radial {
+            background-image: radial-gradient(var(--tw-gradient-stops));
+        }
+      </style>
+</head>
+<body class="bg-background text-on-background font-body-md antialiased overflow-x-hidden min-h-screen">
+<!-- Top Navigation Bar -->
+<header class="h-[52px] fixed top-0 right-0 left-[260px] z-30 border-b border-outline-variant bg-surface-container-lowest dark:bg-surface-container flex justify-between items-center px-gutter w-full">
+<div class="flex items-center gap-4">
+<span class="font-h2 text-h2 font-black text-on-surface dark:text-inverse-on-surface">个人造价数据库</span>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="notifications">notifications</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="database">database</span>
+<span class="material-symbols-outlined text-on-surface-variant hover:text-primary cursor-pointer transition-colors" data-icon="cloud_done">cloud_done</span>
+</div>
+<div class="h-6 w-px bg-outline-variant"></div>
+<span class="font-body-sm text-body-sm text-on-surface-variant">本地已同步</span>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden border border-outline-variant ml-2 flex items-center justify-center">
+<img alt="User Profile" class="object-cover w-full h-full" data-alt="A professional headshot of an engineer in a bright, modern office space. High-key lighting, minimalist background, sharp focus, professional attire. The overall mood is focused and precise, matching the aesthetic of a data-intensive software interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDZMY31AWZ5Kg0hOWus6YA-I0Kd539tSgnkjoIT9ZySy-y47PBerENELvBS_1f3A2r_YCrNMK3K3TYKGg_tm9QMRIei9K3Of87uzMxkGWeN32UahUwnQipo9p9rdlkr-TkXu8t34JUUrOlmB6sTPVEEzSkZxsn5-YAUoTbBU0kUamZTMMjJnrEtT5W3zbsMRCZ6YuUUXCJcSXhaj1pMmP_ttG4rnnCbRErO5aTXv4fExHCkqDiHAVSyCH41UZ9hYIYroAz2kveccb3Z"/>
+</div>
+</div>
+</header>
+<!-- Side Navigation Bar -->
+<nav class="w-[260px] h-screen fixed left-0 top-0 border-r border-outline-variant bg-surface dark:bg-surface-container-low flex flex-col py-margin-page z-40">
+<div class="px-gutter mb-6">
+<h1 class="font-h1 text-h1 font-bold text-primary dark:text-on-primary-fixed-variant">造价云数据库</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">专业版工作台</p>
+</div>
+<div class="flex-1 flex flex-col gap-1 px-2">
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all rounded" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">工作台</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all rounded" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="font-body-md text-body-md">项目库</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all rounded" href="#">
+<span class="material-symbols-outlined" data-icon="search_check">search_check</span>
+<span class="font-body-md text-body-md">数据查询</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all rounded" href="#">
+<span class="material-symbols-outlined" data-icon="account_tree">account_tree</span>
+<span class="font-body-md text-body-md">清单匹配</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all rounded" href="#">
+<span class="material-symbols-outlined" data-icon="compare_arrows">compare_arrows</span>
+<span class="font-body-md text-body-md">价格对比</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-primary dark:text-on-primary-container bg-primary-container/10 border-r-4 border-primary font-semibold rounded-l" href="#">
+<span class="material-symbols-outlined" data-icon="upload_file">upload_file</span>
+<span class="font-body-md text-body-md">导入任务</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-on-surface-variant dark:text-on-surface hover:bg-surface-container-highest dark:hover:bg-surface-container transition-all rounded mt-auto" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-md text-body-md">设置</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-[260px] mt-[52px] p-margin-page min-h-[calc(100vh-52px)]">
+<!-- Header Section -->
+<div class="flex justify-between items-end mb-6">
+<div>
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="arrow_back">arrow_back</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant cursor-pointer hover:text-primary">返回任务列表</span>
+</div>
+<h2 class="font-h1 text-h1 text-on-surface">导入质量报告：2023_Q3_Project_Data.xlsx</h2>
+</div>
+<div class="flex gap-3">
+<button class="h-8 px-4 border border-outline-variant bg-surface-container-lowest text-on-surface font-body-sm text-body-sm rounded hover:bg-surface-container transition-colors">取消导入</button>
+<button class="h-8 px-4 bg-primary text-on-primary font-body-sm text-body-sm rounded flex items-center gap-2 hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="check_circle">check_circle</span>
+                     完成修正并导入
+                 </button>
+</div>
+</div>
+<!-- Top Overview -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-lg flex items-center justify-between">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-1">可直接发布比例</p>
+<p class="font-h1 text-h1 text-primary">96.8%</p>
+</div>
+<div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="task_alt">task_alt</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-lg flex items-center justify-between">
+<div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mb-1">待确认项</p>
+<p class="font-h1 text-h1 text-secondary-container">23 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">项</span></p>
+</div>
+<div class="w-12 h-12 rounded-full bg-secondary-container/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-secondary-container text-xl" data-icon="help_center">help_center</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest border border-outline-variant p-4 rounded-lg border-l-4 border-l-error flex items-center justify-between">
+<div>
+<p class="font-body-sm text-body-sm text-error mb-1 font-semibold">阻断错误</p>
+<p class="font-h1 text-h1 text-error">4 <span class="font-body-sm text-body-sm text-on-surface-variant font-normal">项</span></p>
+</div>
+<div class="w-12 h-12 rounded-full bg-error/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-error text-xl" data-icon="error">error</span>
+</div>
+</div>
+</div>
+<!-- Main Workspace (Two Columns) -->
+<div class="grid grid-cols-12 gap-6 h-[600px]">
+<!-- Left Column: Exception List -->
+<div class="col-span-5 bg-surface-container-lowest border border-outline-variant rounded-lg flex flex-col overflow-hidden">
+<div class="px-4 py-3 border-b border-outline-variant flex justify-between items-center bg-surface-container-lowest">
+<h3 class="font-h2 text-h2 text-on-surface">解析异常列表</h3>
+<div class="flex items-center gap-2">
+<span class="font-body-sm text-body-sm text-on-surface-variant">筛选:</span>
+<select class="h-8 border border-outline-variant bg-surface-container-lowest rounded text-body-sm font-body-sm text-on-surface py-0 px-2 pr-8 focus:ring-1 focus:ring-primary/20">
+<option>全部异常 (27)</option>
+<option>阻断错误 (4)</option>
+<option>待确认 (23)</option>
+</select>
+</div>
+</div>
+<div class="flex-1 overflow-y-auto p-0">
+<!-- List Header -->
+<div class="grid grid-cols-12 px-4 py-2 border-b border-outline-variant bg-surface sticky top-0 z-10 font-label-caps text-label-caps text-on-surface-variant">
+<div class="col-span-2">行号</div>
+<div class="col-span-6">异常描述</div>
+<div class="col-span-4 text-right">类型</div>
+</div>
+<!-- Items -->
+<div class="grid grid-cols-12 px-4 py-2 border-b border-outline-variant table-row-hover cursor-pointer items-center min-h-[40px] bg-error/5">
+<div class="col-span-2 font-data-mono text-data-mono text-on-surface">142</div>
+<div class="col-span-6 font-body-sm text-body-sm text-on-surface line-clamp-1">综合单价与明细乘积不平</div>
+<div class="col-span-4 text-right flex justify-end">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-error/10 text-error border border-error/20">金额不平</span>
+</div>
+</div>
+<div class="grid grid-cols-12 px-4 py-2 border-b border-outline-variant table-row-hover cursor-pointer items-center min-h-[40px] bg-primary/5 border-l-2 border-l-primary">
+<div class="col-span-2 font-data-mono text-data-mono text-on-surface">156</div>
+<div class="col-span-6 font-body-sm text-body-sm text-on-surface line-clamp-1">标准单位与原件单位不符</div>
+<div class="col-span-4 text-right flex justify-end">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary-container/10 text-secondary-container border border-secondary-container/20">单位冲突</span>
+</div>
+</div>
+<div class="grid grid-cols-12 px-4 py-2 border-b border-outline-variant table-row-hover cursor-pointer items-center min-h-[40px]">
+<div class="col-span-2 font-data-mono text-data-mono text-on-surface">201</div>
+<div class="col-span-6 font-body-sm text-body-sm text-on-surface line-clamp-1">清单编码系统中已存在相同记录</div>
+<div class="col-span-4 text-right flex justify-end">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-tertiary-container/10 text-tertiary-container border border-tertiary-container/20">疑似重复</span>
+</div>
+</div>
+<div class="grid grid-cols-12 px-4 py-2 border-b border-outline-variant table-row-hover cursor-pointer items-center min-h-[40px] bg-error/5">
+<div class="col-span-2 font-data-mono text-data-mono text-on-surface">245</div>
+<div class="col-span-6 font-body-sm text-body-sm text-on-surface line-clamp-1">必填项"项目特征"为空</div>
+<div class="col-span-4 text-right flex justify-end">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-error/10 text-error border border-error/20">阻断错误</span>
+</div>
+</div>
+</div>
+<div class="p-3 border-t border-outline-variant bg-surface-container-lowest flex justify-between items-center">
+<span class="font-body-sm text-body-sm text-on-surface-variant">已选 1 项</span>
+<div class="flex gap-2">
+<button class="h-8 px-3 border border-outline-variant text-on-surface font-body-sm text-body-sm rounded hover:bg-surface-container transition-colors">批量跳过</button>
+<button class="h-8 px-3 border border-outline-variant text-on-surface font-body-sm text-body-sm rounded hover:bg-surface-container transition-colors">重新校验</button>
+</div>
+</div>
+</div>
+<!-- Right Column: Detail & Resolution -->
+<div class="col-span-7 bg-surface-container-lowest border border-outline-variant rounded-lg flex flex-col overflow-hidden relative">
+<div class="px-6 py-4 border-b border-outline-variant bg-surface-container-lowest">
+<div class="flex items-center gap-2 mb-1">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-secondary-container/10 text-secondary-container border border-secondary-container/20">单位冲突</span>
+<span class="font-data-mono text-data-mono text-on-surface-variant ml-2">Row 156</span>
+</div>
+<h3 class="font-h2 text-h2 text-on-surface">标准单位与原件单位不符</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">系统标准库中该清单单位为"m³"，而导入原件中为"立方米"。请确认是否进行标准化转换。</p>
+</div>
+<div class="flex-1 p-6 overflow-y-auto bg-surface/50 relative">
+<!-- Visual Comparison Graphic -->
+<div class="grid grid-cols-2 gap-8 relative z-10">
+<!-- Excel Snippet -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-md shadow-sm overflow-hidden">
+<div class="bg-surface-container-high px-3 py-2 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="table_view">table_view</span>
+<span class="font-label-caps text-label-caps text-on-surface-variant">Excel 原件片段</span>
+</div>
+<div class="p-4 font-data-mono text-data-mono text-on-surface text-sm space-y-2">
+<div class="flex justify-between border-b border-outline-variant pb-1">
+<span class="text-on-surface-variant">清单编码</span>
+<span>010101001001</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-1">
+<span class="text-on-surface-variant">项目名称</span>
+<span>平整场地</span>
+</div>
+<div class="flex justify-between border-b border-error/30 pb-1 bg-error/5 -mx-4 px-4 py-1">
+<span class="text-on-surface-variant">计量单位</span>
+<span class="text-error font-medium line-through">立方米</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-1">
+<span class="text-on-surface-variant">工程量</span>
+<span>1250.00</span>
+</div>
+</div>
+</div>
+<!-- System Result -->
+<div class="bg-surface-container-lowest border border-primary/20 rounded-md shadow-sm overflow-hidden">
+<div class="bg-primary/5 px-3 py-2 border-b border-primary/20 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check_box">check_box</span>
+<span class="font-label-caps text-label-caps text-primary">系统解析结果</span>
+</div>
+<div class="p-4 font-data-mono text-data-mono text-on-surface text-sm space-y-2">
+<div class="flex justify-between border-b border-outline-variant pb-1">
+<span class="text-on-surface-variant">清单编码</span>
+<span>010101001001</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-1">
+<span class="text-on-surface-variant">项目名称</span>
+<span>平整场地</span>
+</div>
+<div class="flex justify-between border-b border-primary/30 pb-1 bg-primary/5 -mx-4 px-4 py-1">
+<span class="text-on-surface-variant">计量单位</span>
+<span class="text-primary font-medium">m³</span>
+</div>
+<div class="flex justify-between border-b border-outline-variant pb-1">
+<span class="text-on-surface-variant">工程量</span>
+<span>1250.00</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative Connection -->
+<div class="absolute left-1/2 top-[120px] -translate-x-1/2 flex items-center justify-center w-8 h-8 bg-surface-container-lowest border border-outline-variant rounded-full z-20 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</div>
+<!-- Resolution Actions -->
+<div class="mt-8 bg-surface-container-lowest border border-outline-variant rounded-md p-4">
+<h4 class="font-body-md text-body-md font-semibold text-on-surface mb-3">处理方式</h4>
+<div class="space-y-3">
+<label class="flex items-start gap-3 cursor-pointer group">
+<input checked="" class="mt-1 text-primary focus:ring-primary h-4 w-4 border-outline-variant" name="resolution" type="radio"/>
+<div>
+<span class="block font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">接受系统建议：转换为标准单位 "m³"</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">推荐。有利于后续数据的统计和对比。</span>
+</div>
+</label>
+<label class="flex items-start gap-3 cursor-pointer group opacity-70">
+<input class="mt-1 text-primary focus:ring-primary h-4 w-4 border-outline-variant" name="resolution" type="radio"/>
+<div>
+<span class="block font-body-md text-body-md text-on-surface group-hover:text-primary transition-colors">保留原件单位："立方米"</span>
+<span class="block font-body-sm text-body-sm text-on-surface-variant">将按原样导入，可能影响库内查询。</span>
+</div>
+</label>
+</div>
+<div class="mt-6 flex items-center justify-between border-t border-outline-variant pt-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-on-surface-variant text-sm" data-icon="info">info</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">若为疑似重复，将明确标记 <span class="bg-surface-container px-1 py-0.5 rounded text-on-surface font-mono">已跳过</span> 或 <span class="bg-surface-container px-1 py-0.5 rounded text-on-surface font-mono">创建新版本</span>。</span>
+</div>
+<div class="flex gap-2">
+<button class="h-8 px-4 border border-outline-variant text-on-surface font-body-sm text-body-sm rounded hover:bg-surface-container transition-colors">暂不处理</button>
+<button class="h-8 px-4 bg-primary text-on-primary font-body-sm text-body-sm rounded hover:bg-primary/90 transition-colors">确认修正</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

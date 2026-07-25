@@ -19,3 +19,28 @@ backups/
 *.log
 tmp/
 
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+backend/.venv/
+backend/dist/
+backend/build/
+*.spec.bak
+
+# Node
+node_modules/
+frontend/node_modules/
+frontend/dist/
+playwright-report/
+test-results/
+
+# Application runtime
+runtime/
+*.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
+

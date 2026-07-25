@@ -1,0 +1,626 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="个人造价数据库管理平台 UI 风格探索原型">
+  <title>造价数据库 · UI 风格原型</title>
+  <!-- PROTOTYPE: Three UI directions, switchable with ?variant=A|B|C. Delete after a direction is chosen. -->
+  <style>
+    :root {
+      color-scheme: light;
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+      font-synthesis: none;
+      --ink: #17201d;
+      --muted: #596762;
+      --faint: #7b8783;
+      --line: #d9dfdc;
+      --line-strong: #bcc6c1;
+      --surface: #ffffff;
+      --canvas: #f3f5f4;
+      --accent: #146c5a;
+      --accent-hover: #0e594a;
+      --accent-soft: #e7f2ef;
+      --info: #245ea8;
+      --info-soft: #eaf1fb;
+      --warning: #a45c08;
+      --warning-soft: #fff2dd;
+      --danger: #a33a3a;
+      --danger-soft: #fbeaea;
+      --success: #237a4c;
+      --success-soft: #e9f4ed;
+      --shadow: 0 4px 8px rgb(25 38 33 / 10%);
+      --r-sm: 4px;
+      --r-md: 8px;
+      --switcher-h: 58px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--canvas); color: var(--ink); }
+    body { min-width: 320px; font-size: 14px; line-height: 1.45; letter-spacing: 0; }
+    button, input, select { font: inherit; letter-spacing: 0; }
+    button { color: inherit; }
+    button, [role="button"], input, select { outline: none; }
+    button:focus-visible, [role="button"]:focus-visible, input:focus-visible, select:focus-visible {
+      box-shadow: 0 0 0 3px rgb(36 94 168 / 28%);
+    }
+    button { cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: .48; }
+    .icon { width: 16px; height: 16px; flex: 0 0 auto; stroke-width: 1.8; }
+    .icon-sm { width: 14px; height: 14px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+    .prototype-note {
+      position: fixed; top: 10px; right: 12px; z-index: 50; padding: 5px 9px;
+      background: #fff3c4; color: #674f00; border: 1px solid #ddc460; border-radius: var(--r-sm);
+      font-size: 12px; font-weight: 650;
+    }
+    .variant { display: none; min-height: 100vh; padding-bottom: calc(var(--switcher-h) + 18px); }
+    .variant.active { display: block; }
+
+    .btn {
+      min-height: 34px; padding: 0 12px; display: inline-flex; align-items: center; justify-content: center;
+      gap: 7px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: #fff;
+      font-weight: 600;
+    }
+    .btn:hover { background: #f5f7f6; }
+    .btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-quiet { border-color: transparent; background: transparent; color: var(--muted); }
+    .btn-quiet:hover { background: rgb(23 32 29 / 6%); color: var(--ink); }
+    .icon-btn { width: 34px; height: 34px; padding: 0; }
+    .text-link { border: 0; padding: 0; background: none; color: var(--info); font-weight: 600; }
+    .text-link:hover { text-decoration: underline; }
+    .field {
+      height: 34px; padding: 0 10px; border: 1px solid var(--line-strong); border-radius: var(--r-sm);
+      background: #fff; color: var(--ink);
+    }
+    .field::placeholder { color: #68746f; }
+    .field:focus { border-color: var(--info); }
+    .tag, .status {
+      display: inline-flex; align-items: center; gap: 5px; min-height: 24px; padding: 2px 7px;
+      border-radius: 999px; border: 1px solid var(--line); background: #f6f8f7; color: #3c4945;
+      font-size: 12px; font-weight: 600; white-space: nowrap;
+    }
+    .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status-good { background: var(--success-soft); color: var(--success); border-color: #bcdac8; }
+    .status-warn { background: var(--warning-soft); color: var(--warning); border-color: #ebce9d; }
+    .status-bad { background: var(--danger-soft); color: var(--danger); border-color: #edc1c1; }
+    .status-info { background: var(--info-soft); color: var(--info); border-color: #bfd0e8; }
+    .metric-number { font-variant-numeric: tabular-nums; font-weight: 700; }
+    .numeric { font-variant-numeric: tabular-nums; text-align: right; }
+    .muted { color: var(--muted); }
+    .section-title { margin: 0; font-size: 16px; line-height: 1.25; font-weight: 720; }
+    .divider { width: 1px; align-self: stretch; background: var(--line); }
+
+    /* Variant A: evidence workspace */
+    .a-shell { display: grid; grid-template-columns: 220px minmax(640px, 1fr); min-height: calc(100vh - var(--switcher-h) - 18px); }
+    .a-sidebar { background: #18211e; color: #d9e2df; padding: 18px 12px; display: flex; flex-direction: column; }
+    .a-brand { display: flex; gap: 10px; align-items: center; padding: 0 8px 20px; }
+    .a-mark { width: 30px; height: 30px; display: grid; place-items: center; background: #42a487; color: #10231d; border-radius: 6px; font-weight: 850; }
+    .a-brand strong { display: block; color: #fff; font-size: 15px; }
+    .a-brand span { display: block; color: #9fb0aa; font-size: 11px; }
+    .a-nav-label { padding: 14px 10px 6px; color: #82938d; font-size: 11px; font-weight: 700; }
+    .a-nav { display: grid; gap: 3px; }
+    .a-nav button {
+      width: 100%; min-height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 10px;
+      border: 0; border-radius: var(--r-sm); background: transparent; color: #bdcbc6; text-align: left;
+    }
+    .a-nav button:hover { background: #26322e; color: #fff; }
+    .a-nav button.active { background: #dceee8; color: #114c3e; font-weight: 700; }
+    .a-nav .count { margin-left: auto; min-width: 22px; padding: 1px 5px; text-align: center; border-radius: 99px; background: #a95b36; color: white; font-size: 11px; }
+    .a-storage { margin-top: auto; padding: 12px 10px 4px; border-top: 1px solid #34433e; color: #a9b7b2; font-size: 12px; }
+    .a-storage-row { display: flex; justify-content: space-between; margin-bottom: 7px; }
+    .progress { height: 5px; overflow: hidden; background: #3a4743; border-radius: 99px; }
+    .progress > span { display: block; width: 38%; height: 100%; background: #69b89f; }
+    .a-main { min-width: 0; background: #f4f6f5; }
+    .a-topbar { height: 58px; padding: 0 22px; display: flex; align-items: center; gap: 12px; background: #fff; border-bottom: 1px solid var(--line); }
+    .a-topbar .crumb { color: var(--muted); white-space: nowrap; }
+    .a-topbar .crumb strong { color: var(--ink); }
+    .a-top-search { margin-left: auto; position: relative; width: min(360px, 36vw); }
+    .a-top-search .icon { position: absolute; left: 10px; top: 9px; color: var(--faint); }
+    .a-top-search input { width: 100%; padding-left: 34px; }
+    .a-content { padding: 20px 22px 24px; }
+    .a-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; margin-bottom: 18px; }
+    .a-heading h1 { margin: 0 0 4px; font-size: 23px; line-height: 1.2; }
+    .a-heading p { margin: 0; color: var(--muted); }
+    .a-summary { display: flex; border-block: 1px solid var(--line); background: #fff; margin-bottom: 16px; }
+    .a-stat { min-width: 150px; padding: 13px 16px; border-right: 1px solid var(--line); }
+    .a-stat span { color: var(--muted); font-size: 12px; }
+    .a-stat strong { display: block; margin-top: 2px; font-size: 19px; }
+    .a-stat.alert strong { color: var(--warning); }
+    .a-workspace { display: grid; grid-template-columns: minmax(560px, 1fr) 330px; border: 1px solid var(--line); background: #fff; min-height: 560px; }
+    .a-results { min-width: 0; }
+    .toolbar { min-height: 51px; padding: 8px 10px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .search-wide { position: relative; flex: 1 1 260px; }
+    .search-wide .icon { position: absolute; left: 10px; top: 9px; color: var(--faint); }
+    .search-wide input { width: 100%; padding-left: 34px; }
+    .filter-strip { padding: 8px 10px; display: flex; align-items: center; gap: 7px; border-bottom: 1px solid var(--line); background: #fafbfa; overflow-x: auto; }
+    .filter-strip .label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .data-table th { position: sticky; top: 0; z-index: 1; padding: 9px 10px; background: #f1f4f2; color: #4e5d58; text-align: left; font-size: 12px; border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+    .data-table td { padding: 10px; border-bottom: 1px solid #e7ebe9; vertical-align: top; }
+    .data-table tbody tr { cursor: pointer; }
+    .data-table tbody tr:hover td { background: #f6faf8; }
+    .data-table tbody tr.selected td { background: #e9f3f0; }
+    .data-table .item-name { min-width: 200px; max-width: 290px; }
+    .data-table .item-name strong { display: block; margin-bottom: 2px; }
+    .data-table .item-name span { color: var(--muted); font-size: 12px; }
+    .table-footer { height: 44px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 12px; }
+    .pager { display: flex; gap: 4px; }
+    .pager button { width: 28px; height: 28px; border: 1px solid var(--line); background: #fff; border-radius: var(--r-sm); }
+    .pager button.active { color: #fff; background: var(--accent); border-color: var(--accent); }
+    .evidence { min-width: 0; border-left: 1px solid var(--line); background: #fbfcfb; }
+    .evidence-head { padding: 14px 16px 12px; border-bottom: 1px solid var(--line); display: flex; align-items: start; justify-content: space-between; }
+    .evidence-head p { margin: 3px 0 0; color: var(--muted); font-size: 12px; }
+    .evidence-body { padding: 14px 16px; }
+    .evidence-price { display: flex; align-items: end; justify-content: space-between; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .evidence-price strong { font-size: 25px; font-variant-numeric: tabular-nums; }
+    .evidence-price small { color: var(--muted); }
+    .definition { display: grid; grid-template-columns: 84px 1fr; gap: 8px 10px; margin: 14px 0; font-size: 12px; }
+    .definition dt { color: var(--muted); }
+    .definition dd { margin: 0; font-weight: 550; overflow-wrap: anywhere; }
+    .source-block { padding: 12px; background: #eef3f1; border-radius: var(--r-sm); }
+    .source-block h3 { margin: 0 0 8px; font-size: 13px; }
+    .source-path { display: flex; gap: 7px; align-items: flex-start; color: #34413d; font-size: 12px; }
+    .source-path span { overflow-wrap: anywhere; }
+    .confidence { margin-top: 14px; }
+    .confidence-head { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 12px; }
+    .score-line { height: 6px; background: #dfe5e2; border-radius: 99px; overflow: hidden; }
+    .score-line span { display: block; width: 88%; height: 100%; background: var(--success); }
+    .reason-list { margin: 10px 0 0; padding: 0; list-style: none; display: grid; gap: 7px; font-size: 12px; }
+    .reason-list li { display: flex; gap: 7px; align-items: flex-start; }
+    .reason-list .ok { color: var(--success); }
+    .reason-list .warn { color: var(--warning); }
+
+    /* Variant B: task cockpit */
+    .b-shell { min-height: calc(100vh - var(--switcher-h) - 18px); background: #eef1f3; }
+    .b-header { min-height: 62px; display: flex; align-items: center; gap: 22px; padding: 0 28px; background: #fff; border-bottom: 1px solid #d5dade; }
+    .b-brand { font-weight: 780; font-size: 17px; white-space: nowrap; }
+    .b-brand span { color: #b14727; }
+    .b-nav { display: flex; align-self: stretch; gap: 5px; }
+    .b-nav button { border: 0; border-bottom: 3px solid transparent; background: none; padding: 0 13px; color: #5b646a; }
+    .b-nav button.active { color: #1f272b; border-bottom-color: #b14727; font-weight: 700; }
+    .b-header-actions { margin-left: auto; display: flex; gap: 8px; }
+    .b-content { max-width: 1440px; margin: 0 auto; padding: 22px 28px 28px; }
+    .b-title-row { display: flex; justify-content: space-between; align-items: end; gap: 18px; margin-bottom: 18px; }
+    .b-title-row h1 { margin: 0 0 4px; font-size: 24px; }
+    .b-title-row p { margin: 0; color: #5b656a; }
+    .pipeline { display: grid; grid-template-columns: repeat(4, 1fr); background: #fff; border: 1px solid #cfd5d8; margin-bottom: 18px; }
+    .pipe-step { position: relative; padding: 14px 16px 14px 47px; min-height: 72px; border-right: 1px solid #d9dddf; }
+    .pipe-step:last-child { border-right: 0; }
+    .pipe-number { position: absolute; left: 15px; top: 17px; width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%; background: #e8ebed; color: #465056; font-size: 12px; font-weight: 800; }
+    .pipe-step.done .pipe-number { background: #e4f1e8; color: #277747; }
+    .pipe-step.current { background: #fff6e8; }
+    .pipe-step.current .pipe-number { background: #b14727; color: #fff; }
+    .pipe-step strong { display: block; font-size: 13px; }
+    .pipe-step span { color: #667177; font-size: 12px; }
+    .b-grid { display: grid; grid-template-columns: minmax(0, 1fr) 350px; gap: 16px; }
+    .b-panel { background: #fff; border: 1px solid #cfd5d8; border-radius: 2px; }
+    .b-panel-head { min-height: 52px; padding: 10px 14px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #d9dddf; }
+    .b-panel-head h2 { margin: 0; font-size: 15px; }
+    .b-tabs { display: flex; gap: 2px; padding: 0 14px; border-bottom: 1px solid #d9dddf; }
+    .b-tabs button { min-height: 40px; padding: 0 11px; border: 0; border-bottom: 2px solid transparent; background: none; color: #59646a; }
+    .b-tabs button.active { border-bottom-color: #b14727; color: #222b2f; font-weight: 700; }
+    .b-list { margin: 0; padding: 0; list-style: none; }
+    .b-task { display: grid; grid-template-columns: 26px minmax(180px, 1fr) 105px 96px 82px; align-items: center; gap: 10px; min-height: 62px; padding: 10px 14px; border-bottom: 1px solid #e2e5e7; }
+    .b-task:hover { background: #fafbfb; }
+    .b-task input { width: 16px; height: 16px; accent-color: #b14727; }
+    .b-task-main strong { display: block; font-size: 13px; }
+    .b-task-main span { color: #677177; font-size: 12px; }
+    .issue-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #59646a; }
+    .b-side { display: grid; align-content: start; gap: 16px; }
+    .b-progress { padding: 16px; }
+    .b-progress-top { display: flex; align-items: end; justify-content: space-between; }
+    .b-progress-top strong { font-size: 30px; color: #b14727; }
+    .b-progress-top span { color: #69747a; font-size: 12px; }
+    .b-progress .score-line { margin: 10px 0 12px; background: #e2e5e6; }
+    .b-progress .score-line span { width: 72%; background: #b14727; }
+    .b-mini-grid { display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid #e1e4e5; }
+    .b-mini { padding: 11px 0 0; }
+    .b-mini:nth-child(even) { padding-left: 13px; border-left: 1px solid #e1e4e5; }
+    .b-mini span { display: block; color: #69747a; font-size: 11px; }
+    .b-mini strong { font-size: 16px; }
+    .b-timeline { padding: 6px 16px 14px; }
+    .timeline-item { position: relative; padding: 10px 0 10px 20px; border-left: 1px solid #cbd2d5; }
+    .timeline-item::before { content: ""; position: absolute; left: -4px; top: 15px; width: 7px; height: 7px; background: #667177; border-radius: 50%; }
+    .timeline-item:first-child::before { background: #b14727; }
+    .timeline-item strong { display: block; font-size: 12px; }
+    .timeline-item span { color: #6b757a; font-size: 11px; }
+    .b-callout { margin: 14px; padding: 12px; background: #fff5e6; border: 1px solid #e8cda3; border-radius: 3px; }
+    .b-callout strong { display: block; margin-bottom: 3px; font-size: 12px; color: #73431a; }
+    .b-callout p { margin: 0; color: #674e37; font-size: 12px; }
+
+    /* Variant C: analysis canvas */
+    .c-shell { min-height: calc(100vh - var(--switcher-h) - 18px); background: #f7f7f5; }
+    .c-header { min-height: 56px; display: flex; align-items: center; gap: 18px; padding: 0 20px; background: #242421; color: #f5f5f1; }
+    .c-brand { display: flex; align-items: center; gap: 9px; font-weight: 750; }
+    .c-brand .square { width: 24px; height: 24px; display: grid; place-items: center; background: #f1c84b; color: #242421; border-radius: 3px; }
+    .c-command { position: relative; width: min(460px, 42vw); margin: 0 auto; }
+    .c-command .icon { position: absolute; left: 11px; top: 9px; color: #9f9f98; }
+    .c-command input { width: 100%; background: #353531; border-color: #52524c; color: #fff; padding-left: 35px; }
+    .c-command input::placeholder { color: #b8b8b0; }
+    .c-header .btn { background: transparent; border-color: #5b5b55; color: #f4f4ef; }
+    .c-page-head { padding: 17px 22px 13px; display: flex; align-items: end; justify-content: space-between; gap: 16px; border-bottom: 1px solid #d7d7d2; }
+    .c-page-head h1 { margin: 0 0 4px; font-size: 21px; }
+    .c-page-head p { margin: 0; color: #60605b; }
+    .c-tabs { display: flex; gap: 16px; }
+    .c-tabs button { padding: 5px 0; border: 0; border-bottom: 2px solid transparent; background: none; color: #61615c; }
+    .c-tabs button.active { color: #252522; border-bottom-color: #252522; font-weight: 700; }
+    .c-layout { display: grid; grid-template-columns: 240px minmax(720px, 1fr); min-height: 630px; }
+    .c-filters { padding: 16px 14px; border-right: 1px solid #d7d7d2; background: #eeeeeb; }
+    .c-filter-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+    .c-filter-title strong { font-size: 13px; }
+    .filter-group { padding: 12px 0; border-top: 1px solid #d1d1cb; }
+    .filter-group > strong { display: block; margin-bottom: 8px; font-size: 12px; }
+    .check-list { display: grid; gap: 7px; }
+    .check-list label { display: flex; align-items: center; gap: 7px; color: #444440; font-size: 12px; }
+    .check-list input { accent-color: #3c63bb; }
+    .range { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+    .range .field { width: 100%; height: 30px; font-size: 12px; }
+    .c-main { min-width: 0; padding: 16px 20px 22px; }
+    .c-context { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .c-context .tag { border-radius: 3px; background: #eceff6; border-color: #ccd3e4; color: #304c88; }
+    .c-context .text-link { margin-left: auto; }
+    .compare-table-wrap { overflow-x: auto; border-block: 1px solid #cfcfca; background: #fff; }
+    .compare-table { width: 100%; min-width: 900px; border-collapse: collapse; table-layout: fixed; }
+    .compare-table th, .compare-table td { padding: 10px 12px; border-right: 1px solid #deded9; border-bottom: 1px solid #e5e5e1; vertical-align: top; }
+    .compare-table th { background: #f0f0ec; text-align: left; font-size: 12px; }
+    .compare-table th:first-child, .compare-table td:first-child { width: 150px; color: #595954; font-weight: 650; }
+    .compare-table th.sample { background: #fff; }
+    .compare-table th.sample.selected { background: #eef2fb; box-shadow: inset 0 3px #3c63bb; }
+    .sample-title { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+    .sample-title strong { display: block; color: #252522; font-size: 13px; }
+    .sample-title span { color: #686863; font-size: 11px; font-weight: 400; }
+    .price-primary { font-size: 19px; font-weight: 760; font-variant-numeric: tabular-nums; }
+    .price-secondary { display: block; color: #62625d; font-size: 11px; }
+    .cell-diff { background: #fff6df; color: #72541a; }
+    .composition { margin-top: 16px; display: grid; grid-template-columns: minmax(0, 1fr) 310px; gap: 16px; }
+    .chart-section { padding-top: 2px; }
+    .chart-section h2, .c-notes h2 { margin: 0 0 10px; font-size: 15px; }
+    .bar-chart { height: 176px; display: flex; align-items: end; gap: 12px; padding: 16px 18px 26px; border: 1px solid #d7d7d2; background: #fff; }
+    .bar { flex: 1; min-width: 36px; height: var(--h); position: relative; background: #4d6eb8; }
+    .bar:nth-child(2) { background: #698453; }
+    .bar:nth-child(3) { background: #c3773e; }
+    .bar:nth-child(4) { background: #70706b; }
+    .bar span { position: absolute; left: 50%; bottom: -21px; transform: translateX(-50%); font-size: 10px; color: #5d5d58; white-space: nowrap; }
+    .bar strong { position: absolute; left: 50%; top: -20px; transform: translateX(-50%); font-size: 10px; white-space: nowrap; }
+    .c-notes { border: 1px solid #d7d7d2; background: #fff; padding: 14px; }
+    .note-row { padding: 10px 0; border-top: 1px solid #e1e1dd; }
+    .note-row:first-of-type { border-top: 0; padding-top: 0; }
+    .note-row strong { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+    .note-row p { margin: 3px 0 0; color: #60605c; font-size: 12px; }
+
+    /* Prototype switcher */
+    .prototype-switcher {
+      position: fixed; z-index: 100; left: 50%; bottom: 14px; transform: translateX(-50%);
+      height: 46px; display: flex; align-items: center; gap: 4px; padding: 5px;
+      background: #111714; color: #fff; border-radius: 999px; box-shadow: 0 6px 20px rgb(8 12 10 / 28%);
+    }
+    .prototype-switcher button { width: 36px; height: 36px; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: #fff; }
+    .prototype-switcher button:hover { background: #2c3733; }
+    .variant-label { min-width: 184px; padding: 0 10px; text-align: center; font-size: 12px; font-weight: 700; }
+
+    .modal-backdrop { display: none; position: fixed; inset: 0; z-index: 120; place-items: center; padding: 20px; background: rgb(15 22 19 / 55%); }
+    .modal-backdrop.open { display: grid; }
+    .modal { width: min(520px, 100%); background: #fff; border-radius: var(--r-md); box-shadow: 0 12px 32px rgb(0 0 0 / 22%); }
+    .modal-head, .modal-foot { padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .modal-head { border-bottom: 1px solid var(--line); }
+    .modal-head h2 { margin: 0; font-size: 17px; }
+    .modal-body { padding: 18px 16px; }
+    .dropzone { min-height: 150px; display: grid; place-items: center; text-align: center; border: 1px dashed #87958f; border-radius: var(--r-sm); background: #f7f9f8; }
+    .dropzone .icon { width: 26px; height: 26px; margin-bottom: 8px; color: var(--accent); }
+    .dropzone strong { display: block; }
+    .dropzone p { margin: 4px 0 0; color: var(--muted); font-size: 12px; }
+    .modal-foot { border-top: 1px solid var(--line); justify-content: flex-end; }
+
+    @media (max-width: 1050px) {
+      .a-shell { grid-template-columns: 66px minmax(700px, 1fr); }
+      .a-brand { padding-inline: 6px; justify-content: center; }
+      .a-brand > div:last-child, .a-nav-label, .a-nav button span:not(.count), .a-storage { display: none; }
+      .a-nav button { justify-content: center; padding: 0; }
+      .a-nav .count { position: absolute; margin: -22px 0 0 28px; }
+      .a-workspace { grid-template-columns: minmax(540px, 1fr) 300px; }
+      .b-grid { grid-template-columns: 1fr; }
+      .b-side { grid-template-columns: 1fr 1fr; }
+      .b-task { grid-template-columns: 26px minmax(180px, 1fr) 90px 82px; }
+      .b-task > :nth-child(4) { display: none; }
+      .c-layout { grid-template-columns: 200px minmax(700px, 1fr); }
+    }
+    @media (max-width: 760px) {
+      .prototype-note { display: none; }
+      .a-shell { display: block; min-width: 0; }
+      .a-sidebar { display: none; }
+      .a-topbar { padding: 0 12px; }
+      .a-top-search { width: 40px; margin-left: auto; }
+      .a-top-search input { display: none; }
+      .a-top-search .icon { position: static; margin: 9px; }
+      .a-content { padding: 14px 12px; }
+      .a-heading { align-items: center; }
+      .a-heading p { display: none; }
+      .a-summary { overflow-x: auto; }
+      .a-stat { min-width: 130px; }
+      .a-workspace { display: block; min-height: 0; }
+      .evidence { border-left: 0; border-top: 1px solid var(--line); }
+      .table-scroll { overflow-x: auto; }
+      .data-table { min-width: 760px; }
+      .b-header { padding: 0 12px; gap: 8px; }
+      .b-nav { display: none; }
+      .b-header-actions .btn:not(.btn-primary) { display: none; }
+      .b-content { padding: 14px 12px; }
+      .pipeline { grid-template-columns: 1fr 1fr; }
+      .pipe-step:nth-child(2) { border-right: 0; }
+      .pipe-step:nth-child(-n+2) { border-bottom: 1px solid #d9dddf; }
+      .b-side { grid-template-columns: 1fr; }
+      .b-task { grid-template-columns: 24px 1fr 76px; }
+      .b-task > :nth-child(3), .b-task > :nth-child(4) { display: none; }
+      .c-header { padding: 0 12px; }
+      .c-command { flex: 1; width: auto; }
+      .c-header > .btn { display: none; }
+      .c-page-head { display: block; padding-inline: 12px; }
+      .c-tabs { margin-top: 10px; overflow-x: auto; }
+      .c-layout { display: block; min-width: 0; }
+      .c-filters { border-right: 0; border-bottom: 1px solid #d7d7d2; padding: 10px 12px; }
+      .c-filters .filter-group { display: none; }
+      .c-filter-title { margin: 0; }
+      .c-main { padding: 12px; }
+      .composition { grid-template-columns: 1fr; }
+      .variant-label { min-width: 148px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="prototype-note">设计探索原型 · 非生产页面</div>
+
+  <main id="variant-a" class="variant" aria-label="方案 A 证据工作台">
+    <div class="a-shell">
+      <aside class="a-sidebar" aria-label="主导航">
+        <div class="a-brand"><div class="a-mark">价</div><div><strong>造价数据库</strong><span>个人专业工作台</span></div></div>
+        <div class="a-nav-label">工作</div>
+        <nav class="a-nav">
+          <button><i data-lucide="layout-dashboard" class="icon"></i><span>工作台</span></button>
+          <button class="active"><i data-lucide="search" class="icon"></i><span>数据检索</span></button>
+          <button><i data-lucide="folders" class="icon"></i><span>项目库</span></button>
+          <button><i data-lucide="git-compare-arrows" class="icon"></i><span>参考价匹配</span><span class="count">12</span></button>
+          <button><i data-lucide="list-checks" class="icon"></i><span>导入任务</span><span class="count">7</span></button>
+        </nav>
+        <div class="a-nav-label">管理</div>
+        <nav class="a-nav">
+          <button><i data-lucide="book-open-check" class="icon"></i><span>个人规则</span></button>
+          <button><i data-lucide="database-backup" class="icon"></i><span>备份与恢复</span></button>
+          <button><i data-lucide="settings" class="icon"></i><span>系统设置</span></button>
+        </nav>
+        <div class="a-storage"><div class="a-storage-row"><span>本地数据库</span><strong>38%</strong></div><div class="progress"><span></span></div><p>186.4 GB 可用</p></div>
+      </aside>
+
+      <section class="a-main">
+        <header class="a-topbar">
+          <div class="crumb">数据检索&nbsp; / &nbsp;<strong>清单与价格</strong></div>
+          <div class="a-top-search"><i data-lucide="search" class="icon"></i><input class="field" aria-label="全局搜索" placeholder="搜索项目、清单、材料或编码"></div>
+          <button class="btn icon-btn" title="后台任务" aria-label="查看后台任务"><i data-lucide="activity" class="icon"></i></button>
+          <button class="btn icon-btn" title="帮助" aria-label="查看帮助"><i data-lucide="circle-help" class="icon"></i></button>
+        </header>
+
+        <div class="a-content">
+          <div class="a-heading">
+            <div><h1>历史价格检索</h1><p>查看清单、工料机价格及其项目背景和原始来源</p></div>
+            <button class="btn btn-primary open-import"><i data-lucide="folder-up" class="icon"></i>导入项目</button>
+          </div>
+
+          <div class="a-summary" aria-label="数据摘要">
+            <div class="a-stat"><span>已入库项目</span><strong>286</strong></div>
+            <div class="a-stat"><span>有效价格样本</span><strong>42,680</strong></div>
+            <div class="a-stat alert"><span>待复核异常</span><strong>19</strong></div>
+            <div class="a-stat"><span>最近备份</span><strong style="font-size:14px;margin-top:7px">今天 09:42</strong></div>
+          </div>
+
+          <div class="a-workspace">
+            <section class="a-results" aria-label="查询结果">
+              <div class="toolbar">
+                <div class="search-wide"><i data-lucide="sparkles" class="icon"></i><input id="a-query" class="field" value="近三年西安住宅项目中的 C30 商品混凝土" aria-label="自然语言查询"></div>
+                <button id="a-search" class="btn btn-primary"><i data-lucide="search" class="icon"></i>执行查询</button>
+                <button class="btn icon-btn" title="保存查询" aria-label="保存当前查询"><i data-lucide="bookmark" class="icon"></i></button>
+              </div>
+              <div class="filter-strip"><span class="label">已解析：</span><span class="tag">地区：西安 ×</span><span class="tag">时间：近三年 ×</span><span class="tag">类型：住宅 ×</span><span class="tag">名称：C30 商品混凝土 ×</span><button class="text-link">编辑条件</button></div>
+              <div class="table-scroll">
+                <table class="data-table">
+                  <thead><tr><th><input type="checkbox" aria-label="选择全部"></th><th>名称 / 规格</th><th>项目</th><th>基准期</th><th>单位</th><th class="numeric">原始价</th><th>状态</th></tr></thead>
+                  <tbody id="a-table-body">
+                    <tr class="selected" data-row="0"><td><input type="checkbox" aria-label="选择第一条结果"></td><td class="item-name"><strong>预拌混凝土 C30</strong><span>泵送 · 碎石 · 20mm</span></td><td>西安高新区住宅一期</td><td>2025-03</td><td>m³</td><td class="numeric"><strong>486.20</strong></td><td><span class="status status-good">正式稿</span></td></tr>
+                    <tr data-row="1"><td><input type="checkbox" aria-label="选择第二条结果"></td><td class="item-name"><strong>商品砼 C30</strong><span>泵送 · 普通 · 20mm</span></td><td>曲江住宅项目二标段</td><td>2024-11</td><td>m³</td><td class="numeric"><strong>472.00</strong></td><td><span class="status status-good">正式稿</span></td></tr>
+                    <tr data-row="2"><td><input type="checkbox" aria-label="选择第三条结果"></td><td class="item-name"><strong>预拌混凝土 C30</strong><span>非泵送 · 抗渗 P6</span></td><td>航天基地人才公寓</td><td>2024-06</td><td>m³</td><td class="numeric"><strong>511.80</strong></td><td><span class="status status-warn">口径差异</span></td></tr>
+                    <tr data-row="3"><td><input type="checkbox" aria-label="选择第四条结果"></td><td class="item-name"><strong>商品混凝土 C30</strong><span>泵送 · 细石</span></td><td>浐灞生态区住宅</td><td>2023-09</td><td>m³</td><td class="numeric"><strong>459.60</strong></td><td><span class="status status-info">过程稿</span></td></tr>
+                    <tr data-row="4"><td><input type="checkbox" aria-label="选择第五条结果"></td><td class="item-name"><strong>预拌砼 C30</strong><span>泵送 · 碎石 · 20mm</span></td><td>沣东新城安置房</td><td>2023-04</td><td>m³</td><td class="numeric"><strong>447.30</strong></td><td><span class="status status-good">正式稿</span></td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="table-footer"><span id="result-count">找到 23 条结果 · 当前显示 1–5</span><div class="pager"><button aria-label="上一页">‹</button><button class="active">1</button><button>2</button><button>3</button><button aria-label="下一页">›</button></div></div>
+            </section>
+
+            <aside class="evidence" aria-label="数据证据">
+              <div class="evidence-head"><div><h2 class="section-title" id="evidence-title">预拌混凝土 C30</h2><p id="evidence-code">编码：010501003001</p></div><button class="btn icon-btn btn-quiet" aria-label="关闭证据面板" title="关闭"><i data-lucide="x" class="icon"></i></button></div>
+              <div class="evidence-body">
+                <div class="evidence-price"><div><small>原始单价</small><br><strong id="evidence-price">¥486.20</strong><small> / m³</small></div><span class="status status-good" id="evidence-status">原始值</span></div>
+                <dl class="definition"><dt>所属项目</dt><dd id="evidence-project">西安高新区住宅一期</dd><dt>地区 / 专业</dt><dd>西安 · 土建</dd><dt>价格基准期</dt><dd id="evidence-date">2025 年 3 月</dd><dt>计价体系</dt><dd>国内清单 · 陕西 2019 定额</dd><dt>成果阶段</dt><dd>控制价 · 正式稿</dd></dl>
+                <div class="source-block"><h3>原始来源</h3><div class="source-path"><i data-lucide="file-spreadsheet" class="icon"></i><span id="evidence-source">广联达导出/高新一期/工料机汇总表.xlsx<br>工作表「主要材料表」· 单元格 H126</span></div><button class="text-link" style="margin-top:9px">打开原始位置</button></div>
+                <div class="confidence"><div class="confidence-head"><strong>可比性判断：高</strong><span>4 项一致，1 项需注意</span></div><div class="score-line"><span></span></div><ul class="reason-list"><li><i data-lucide="circle-check" class="icon icon-sm ok"></i>名称、强度等级和单位一致</li><li><i data-lucide="circle-check" class="icon icon-sm ok"></i>同地区、同专业、同计价体系</li><li><i data-lucide="triangle-alert" class="icon icon-sm warn"></i>价格基准期相差 10 个月</li></ul></div>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <main id="variant-b" class="variant" aria-label="方案 B 任务驾驶舱">
+    <div class="b-shell">
+      <header class="b-header"><div class="b-brand"><span>造价</span>数据工作台</div><nav class="b-nav"><button class="active">今日工作</button><button>项目库</button><button>数据检索</button><button>规则库</button></nav><div class="b-header-actions"><button class="btn"><i data-lucide="search" class="icon"></i>搜索</button><button class="btn btn-primary open-import" style="--accent:#b14727;--accent-hover:#8f351b"><i data-lucide="folder-up" class="icon"></i>导入项目</button></div></header>
+      <div class="b-content">
+        <div class="b-title-row"><div><h1>导入复核中心</h1><p>高新区住宅一期 · 广联达项目文件夹 · 2026-07-25 09:18</p></div><div><span class="status status-warn">等待人工复核</span></div></div>
+        <section class="pipeline" aria-label="导入流程">
+          <div class="pipe-step done"><span class="pipe-number">✓</span><strong>文件扫描</strong><span>12 个文件 · 已完成</span></div>
+          <div class="pipe-step done"><span class="pipe-number">✓</span><strong>报表识别</strong><span>9 个已识别 · 1 个跳过</span></div>
+          <div class="pipe-step current"><span class="pipe-number">3</span><strong>异常复核</strong><span>7 项需要判断</span></div>
+          <div class="pipe-step"><span class="pipe-number">4</span><strong>发布版本</strong><span>完成复核后可发布</span></div>
+        </section>
+        <div class="b-grid">
+          <section class="b-panel">
+            <div class="b-panel-head"><div><h2>需要你判断的异常</h2><span class="muted" style="font-size:12px">正常数据 18,462 条已自动通过</span></div><div style="display:flex;gap:7px"><button class="btn">批量处理</button><button class="btn icon-btn" title="筛选" aria-label="筛选异常"><i data-lucide="list-filter" class="icon"></i></button></div></div>
+            <div class="b-tabs"><button class="active">全部 7</button><button>关联失败 3</button><button>字段缺失 2</button><button>金额异常 1</button><button>疑似重复 1</button></div>
+            <ul class="b-list">
+              <li class="b-task"><input type="checkbox" aria-label="选择异常一"><div class="b-task-main"><strong>综合单价分析表未找到对应清单项</strong><span>地下室土建工程 · 第 126 行 · 010501003</span></div><span class="issue-code">关联失败</span><span class="status status-bad">高风险</span><button class="text-link">处理</button></li>
+              <li class="b-task"><input type="checkbox" aria-label="选择异常二"><div class="b-task-main"><strong>材料单位存在冲突：m³ / 100m³</strong><span>商品混凝土 C30 · 涉及 18 条记录</span></div><span class="issue-code">单位冲突</span><span class="status status-bad">高风险</span><button class="text-link">处理</button></li>
+              <li class="b-task"><input type="checkbox" aria-label="选择异常三"><div class="b-task-main"><strong>项目价格基准期缺失</strong><span>将影响可比价计算和跨项目对比</span></div><span class="issue-code">字段缺失</span><span class="status status-warn">需补充</span><button class="text-link">填写</button></li>
+              <li class="b-task"><input type="checkbox" aria-label="选择异常四"><div class="b-task-main"><strong>组成金额与综合单价相差 ¥2.14</strong><span>砌块墙 · 允许容差 ¥0.05</span></div><span class="issue-code">金额异常</span><span class="status status-warn">需核查</span><button class="text-link">核查</button></li>
+              <li class="b-task"><input type="checkbox" aria-label="选择异常五"><div class="b-task-main"><strong>发现可能重复的工料机记录</strong><span>钢筋 HRB400E Φ20 · 编码与规格一致</span></div><span class="issue-code">疑似重复</span><span class="status status-info">可合并</span><button class="text-link">比较</button></li>
+            </ul>
+            <div class="b-callout"><strong>系统不会静默丢弃数据</strong><p>未处理的 7 项异常会保留在暂存区。只有完成复核并通过质量门槛后，才能发布为可查询的项目版本。</p></div>
+          </section>
+          <aside class="b-side">
+            <section class="b-panel"><div class="b-panel-head"><h2>导入质量</h2><button class="text-link">查看完整报告</button></div><div class="b-progress"><div class="b-progress-top"><strong>96.8</strong><span>质量评分 / 100</span></div><div class="score-line"><span></span></div><div class="b-mini-grid"><div class="b-mini"><span>已识别记录</span><strong>18,469</strong></div><div class="b-mini"><span>需要复核</span><strong>7</strong></div><div class="b-mini"><span>关联成功率</span><strong>99.2%</strong></div><div class="b-mini"><span>来源可追溯</span><strong>100%</strong></div></div></div></section>
+            <section class="b-panel"><div class="b-panel-head"><h2>处理记录</h2><span class="muted" style="font-size:12px">自动保存</span></div><div class="b-timeline"><div class="timeline-item"><strong>识别到 7 项需要复核</strong><span>今天 09:26 · 系统校验</span></div><div class="timeline-item"><strong>完成报表间关联</strong><span>今天 09:24 · 18,317 条成功</span></div><div class="timeline-item"><strong>项目元数据已确认</strong><span>今天 09:20 · 用户确认</span></div><div class="timeline-item"><strong>完成 12 个文件扫描</strong><span>今天 09:18 · SHA-256 已记录</span></div></div></section>
+          </aside>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <main id="variant-c" class="variant" aria-label="方案 C 分析画布">
+    <div class="c-shell">
+      <header class="c-header"><div class="c-brand"><span class="square">价</span><span>造价分析库</span></div><div class="c-command"><i data-lucide="search" class="icon"></i><input class="field" aria-label="全局命令和搜索" placeholder="搜索项目、清单或输入分析问题"></div><button class="btn open-import"><i data-lucide="plus" class="icon"></i>新建分析</button><button class="btn icon-btn" aria-label="打开设置" title="设置"><i data-lucide="settings" class="icon"></i></button></header>
+      <div class="c-page-head"><div><h1>C30 商品混凝土 · 历史样本对比</h1><p>4 个可比样本 · 西安 · 住宅 · 2023–2025</p></div><nav class="c-tabs"><button class="active">样本对比</button><button>价格分布</button><button>组成分析</button><button>来源记录</button></nav></div>
+      <div class="c-layout">
+        <aside class="c-filters" aria-label="分析筛选器">
+          <div class="c-filter-title"><strong>分析范围</strong><button class="text-link">重置</button></div>
+          <div class="filter-group"><strong>地区</strong><div class="check-list"><label><input type="checkbox" checked> 西安（23）</label><label><input type="checkbox"> 咸阳（8）</label><label><input type="checkbox"> 宝鸡（4）</label></div></div>
+          <div class="filter-group"><strong>成果阶段</strong><div class="check-list"><label><input type="checkbox" checked> 控制价（12）</label><label><input type="checkbox" checked> 结算价（6）</label><label><input type="checkbox"> 投标价（5）</label></div></div>
+          <div class="filter-group"><strong>价格基准期</strong><div class="range"><input class="field" value="2023-01" aria-label="开始月份"><input class="field" value="2025-12" aria-label="结束月份"></div></div>
+          <div class="filter-group"><strong>数据质量</strong><div class="check-list"><label><input type="checkbox" checked> 仅正式稿</label><label><input type="checkbox" checked> 排除口径冲突</label><label><input type="checkbox"> 包含过程稿</label></div></div>
+        </aside>
+        <section class="c-main">
+          <div class="c-context"><span class="tag">同单位 m³</span><span class="tag">同计价体系</span><span class="tag">已排除抗渗规格</span><button class="text-link">修改比较条件</button></div>
+          <div class="compare-table-wrap">
+            <table class="compare-table">
+              <thead><tr><th>比较维度</th><th class="sample selected"><div class="sample-title"><div><strong>高新住宅一期</strong><span>控制价 · 2025-03</span></div><input type="checkbox" checked aria-label="选择高新住宅一期"></div></th><th class="sample"><div class="sample-title"><div><strong>曲江二标段</strong><span>结算价 · 2024-11</span></div><input type="checkbox" checked aria-label="选择曲江二标段"></div></th><th class="sample"><div class="sample-title"><div><strong>浐灞住宅</strong><span>控制价 · 2023-09</span></div><input type="checkbox" checked aria-label="选择浐灞住宅"></div></th><th class="sample"><div class="sample-title"><div><strong>沣东安置房</strong><span>控制价 · 2023-04</span></div><input type="checkbox" checked aria-label="选择沣东安置房"></div></th></tr></thead>
+              <tbody>
+                <tr><td>原始综合单价</td><td><span class="price-primary">¥486.20</span><span class="price-secondary">原始值 · m³</span></td><td><span class="price-primary">¥472.00</span><span class="price-secondary">原始值 · m³</span></td><td><span class="price-primary">¥459.60</span><span class="price-secondary">原始值 · m³</span></td><td><span class="price-primary">¥447.30</span><span class="price-secondary">原始值 · m³</span></td></tr>
+                <tr><td>换算至 2025-03</td><td><strong>¥486.20</strong><br><span class="muted">基准样本</span></td><td><strong>¥481.40</strong><br><span class="muted">指数 +2.0%</span></td><td><strong>¥478.85</strong><br><span class="muted">指数 +4.2%</span></td><td><strong>¥471.92</strong><br><span class="muted">指数 +5.5%</span></td></tr>
+                <tr><td>人工费</td><td>¥34.18</td><td>¥32.90</td><td>¥33.42</td><td>¥31.88</td></tr>
+                <tr><td>材料费</td><td>¥417.62</td><td>¥405.70</td><td>¥394.16</td><td>¥385.24</td></tr>
+                <tr><td>机械费</td><td>¥12.35</td><td>¥11.84</td><td>¥12.02</td><td>¥10.96</td></tr>
+                <tr><td>规格差异</td><td>泵送 · 20mm</td><td>泵送 · 20mm</td><td class="cell-diff">泵送 · 细石</td><td>泵送 · 20mm</td></tr>
+                <tr><td>来源状态</td><td><span class="status status-good">正式稿</span></td><td><span class="status status-good">正式稿</span></td><td><span class="status status-good">正式稿</span></td><td><span class="status status-good">正式稿</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="composition">
+            <section class="chart-section"><h2>可比价与组成差异</h2><div class="bar-chart" aria-label="四个项目的可比价柱状图"><div class="bar" style="--h:82%"><strong>486.20</strong><span>高新一期</span></div><div class="bar" style="--h:74%"><strong>481.40</strong><span>曲江二标</span></div><div class="bar" style="--h:69%"><strong>478.85</strong><span>浐灞住宅</span></div><div class="bar" style="--h:58%"><strong>471.92</strong><span>沣东安置</span></div></div></section>
+            <aside class="c-notes"><h2>比较结论</h2><div class="note-row"><strong><i data-lucide="circle-check" class="icon icon-sm" style="color:var(--success)"></i>3 个样本高度可比</strong><p>单位、强度等级、施工方式和计价体系一致。</p></div><div class="note-row"><strong><i data-lucide="triangle-alert" class="icon icon-sm" style="color:var(--warning)"></i>浐灞住宅规格不同</strong><p>使用细石混凝土，建议仅作价格区间参考。</p></div><div class="note-row"><strong><i data-lucide="sparkles" class="icon icon-sm" style="color:var(--info)"></i>系统分析</strong><p>高新一期价格高于样本中位数 2.1%，主要差异来自材料费。</p></div><button class="btn" style="width:100%;margin-top:10px"><i data-lucide="file-down" class="icon"></i>导出对比分析</button></aside>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <nav class="prototype-switcher" aria-label="原型方案切换">
+    <button id="prev-variant" aria-label="上一个方案" title="上一个方案（左方向键）"><i data-lucide="chevron-left" class="icon"></i></button>
+    <div id="variant-label" class="variant-label" aria-live="polite">A · 证据工作台</div>
+    <button id="next-variant" aria-label="下一个方案" title="下一个方案（右方向键）"><i data-lucide="chevron-right" class="icon"></i></button>
+  </nav>
+
+  <div id="import-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <div class="modal-head"><h2 id="modal-title">导入历史项目</h2><button id="close-modal" class="btn icon-btn btn-quiet" aria-label="关闭导入窗口"><i data-lucide="x" class="icon"></i></button></div>
+      <div class="modal-body"><div class="dropzone"><div><i data-lucide="folder-up" class="icon"></i><strong>选择项目文件夹</strong><p>原始 Excel 将只读归档，不会被修改或覆盖</p></div></div></div>
+      <div class="modal-foot"><button id="cancel-modal" class="btn">取消</button><button class="btn btn-primary"><i data-lucide="folder-open" class="icon"></i>选择文件夹</button></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+  <script>
+    const variants = [
+      { key: 'A', name: '证据工作台' },
+      { key: 'B', name: '任务驾驶舱' },
+      { key: 'C', name: '分析画布' }
+    ];
+    const params = new URLSearchParams(window.location.search);
+    let currentKey = (params.get('variant') || 'A').toUpperCase();
+    if (!variants.some(item => item.key === currentKey)) currentKey = 'A';
+
+    function showVariant(key, replace = true) {
+      currentKey = key;
+      document.querySelectorAll('.variant').forEach(el => el.classList.remove('active'));
+      document.getElementById(`variant-${key.toLowerCase()}`).classList.add('active');
+      const item = variants.find(v => v.key === key);
+      document.getElementById('variant-label').textContent = `${item.key} · ${item.name}`;
+      document.title = `${item.name} · 造价数据库 UI 原型`;
+      params.set('variant', key);
+      const url = `${window.location.pathname}?${params.toString()}`;
+      if (replace) history.replaceState({ variant: key }, '', url);
+    }
+
+    function cycleVariant(direction) {
+      const index = variants.findIndex(item => item.key === currentKey);
+      const next = (index + direction + variants.length) % variants.length;
+      showVariant(variants[next].key);
+    }
+
+    document.getElementById('prev-variant').addEventListener('click', () => cycleVariant(-1));
+    document.getElementById('next-variant').addEventListener('click', () => cycleVariant(1));
+    document.addEventListener('keydown', event => {
+      const tag = event.target.tagName;
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag) || event.target.isContentEditable) return;
+      if (event.key === 'ArrowLeft') cycleVariant(-1);
+      if (event.key === 'ArrowRight') cycleVariant(1);
+      if (event.key === 'Escape') closeModal();
+    });
+
+    const evidenceRows = [
+      { title: '预拌混凝土 C30', code: '010501003001', price: '¥486.20', project: '西安高新区住宅一期', date: '2025 年 3 月', source: '广联达导出/高新一期/工料机汇总表.xlsx<br>工作表「主要材料表」· 单元格 H126' },
+      { title: '商品砼 C30', code: '010501003018', price: '¥472.00', project: '曲江住宅项目二标段', date: '2024 年 11 月', source: '广联达导出/曲江二标/人材机汇总.xlsx<br>工作表「材料汇总」· 单元格 G98' },
+      { title: '预拌混凝土 C30', code: '010501003024', price: '¥511.80', project: '航天基地人才公寓', date: '2024 年 6 月', source: '广联达导出/航天人才公寓/材料表.xlsx<br>工作表「主材」· 单元格 J211' },
+      { title: '商品混凝土 C30', code: '010501003031', price: '¥459.60', project: '浐灞生态区住宅', date: '2023 年 9 月', source: '广联达导出/浐灞住宅/工料机.xlsx<br>工作表「材料」· 单元格 F177' },
+      { title: '预拌砼 C30', code: '010501003046', price: '¥447.30', project: '沣东新城安置房', date: '2023 年 4 月', source: '广联达导出/沣东安置房/材料汇总.xlsx<br>工作表「主要材料」· 单元格 H142' }
+    ];
+    document.querySelectorAll('#a-table-body tr').forEach(row => {
+      row.addEventListener('click', event => {
+        if (event.target.matches('input')) return;
+        document.querySelectorAll('#a-table-body tr').forEach(item => item.classList.remove('selected'));
+        row.classList.add('selected');
+        const data = evidenceRows[Number(row.dataset.row)];
+        document.getElementById('evidence-title').textContent = data.title;
+        document.getElementById('evidence-code').textContent = `编码：${data.code}`;
+        document.getElementById('evidence-price').textContent = data.price;
+        document.getElementById('evidence-project').textContent = data.project;
+        document.getElementById('evidence-date').textContent = data.date;
+        document.getElementById('evidence-source').innerHTML = data.source;
+      });
+    });
+    document.getElementById('a-search').addEventListener('click', () => {
+      const button = document.getElementById('a-search');
+      button.disabled = true;
+      button.innerHTML = '<span>查询中…</span>';
+      setTimeout(() => {
+        button.disabled = false;
+        button.innerHTML = '<i data-lucide="search" class="icon"></i>执行查询';
+        document.getElementById('result-count').textContent = '找到 23 条结果 · 查询已更新';
+        if (window.lucide) lucide.createIcons();
+      }, 550);
+    });
+
+    const modal = document.getElementById('import-modal');
+    function openModal() { modal.classList.add('open'); document.getElementById('close-modal').focus(); }
+    function closeModal() { modal.classList.remove('open'); }
+    document.querySelectorAll('.open-import').forEach(button => button.addEventListener('click', openModal));
+    document.getElementById('close-modal').addEventListener('click', closeModal);
+    document.getElementById('cancel-modal').addEventListener('click', closeModal);
+    modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+
+    showVariant(currentKey, false);
+    if (window.lucide) lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -1,0 +1,347 @@
+from __future__ import annotations
+
+from datetime import datetime
+from typing import Any, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, field_validator
+
+
+class APIModel(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+
+class DecimalValue(APIModel):
+    value: str | None
+    scale: int = 6
+    unit: str | None = None
+    currency: str | None = None
+
+
+class SourceRef(APIModel):
+    file_id: str
+    file_name: str
+    sheet_name: str
+    start_row: int
+    end_row: int | None = None
+    cell_range: str | None = None
+
+
+class ProjectCreate(APIModel):
+    name: str = Field(min_length=1, max_length=240)
+    region: str = "西安"
+    pricing_date: str
+    specialty: str
+    pricing_mode: str
+    quota_version: str | None = None
+    result_stage: str
+    project_type: str | None = None
+    construction_nature: str | None = None
+    area: str | None = None
+    area_unit: str = "m2"
+    notes: str | None = None
+
+
+class ProjectSummary(APIModel):
+    id: str
+    name: str
+    region: str
+    pricing_date: str
+    specialty: str
+    pricing_mode: str
+    result_stage: str
+    project_type: str | None
+    area: DecimalValue
+    latest_version_id: str | None = None
+    latest_version_no: int | None = None
+    latest_status: str | None = None
+    item_count: int = 0
+    issue_count: int = 0
+    created_at: datetime
+
+
+class ProjectVersionRead(APIModel):
+    id: str
+    project_id: str
+    version_no: int
+    status: str
+    label: str
+    published_at: datetime | None
+    created_at: datetime
+    file_count: int = 0
+    item_count: int = 0
+
+
+class ImportRead(APIModel):
+    id: str
+    project_id: str
+    project_version_id: str
+    status: str
+    progress: int
+    total_files: int
+    processed_files: int
+    error_summary: str | None
+    started_at: datetime | None
+    finished_at: datetime | None
+    created_at: datetime
+    open_issue_count: int = 0
+
+
+class ImportIssueRead(APIModel):
+    id: str
+    import_job_id: str
+    source_file_id: str | None
+    severity: str
+    code: str
+    message: str
+    sheet_name: str | None
+    cell_range: str | None
+    suggested_action: str | None
+    status: str
+    resolution: str | None
+    created_at: datetime
+
+
+class IssueResolve(APIModel):
+    status: Literal["resolved", "ignored"]
+    resolution: str = Field(min_length=1, max_length=1000)
+
+
+class CostComponentRead(APIModel):
+    id: str
+    category: str
+    name: str
+    amount: DecimalValue
+    source: SourceRef
+
+
+class CostItemRead(APIModel):
+    id: str
+    project_id: str
+    project_name: str
+    project_version_id: str
+    code: str | None
+    name: str
+    normalized_name: str
+    description: str | None
+    specification: str | None
+    unit: str | None
+    quantity: DecimalValue
+    unit_price: DecimalValue
+    total: DecimalValue
+    region: str
+    pricing_date: str
+    specialty: str
+    pricing_mode: str
+    result_stage: str
+    source: SourceRef
+    components: list[CostComponentRead] = Field(default_factory=list)
+
+
+class SearchIntent(APIModel):
+    query: str | None = None
+    region: str | None = None
+    pricing_date_from: str | None = None
+    pricing_date_to: str | None = None
+    specialty: str | None = None
+    project_type: str | None = None
+    pricing_mode: str | None = None
+    result_stage: str | None = None
+    unit: str | None = None
+    code: str | None = None
+    specification: str | None = None
+    price_min: str | None = None
+    price_max: str | None = None
+    cursor: str | None = None
+    limit: int = Field(default=50, ge=1, le=200)
+
+
+class SearchResult(APIModel):
+    items: list[CostItemRead]
+    next_cursor: str | None
+    total: int
+
+
+class ComparisonRequest(APIModel):
+    cost_item_ids: list[str] = Field(min_length=2, max_length=20)
+
+
+class ComparisonRead(APIModel):
+    items: list[CostItemRead]
+    sample_count: int
+    min_price: DecimalValue
+    median_price: DecimalValue
+    max_price: DecimalValue
+    warnings: list[str]
+
+
+class MatchQueryItem(APIModel):
+    code: str | None = None
+    name: str = Field(min_length=1)
+    specification: str | None = None
+    unit: str | None = None
+    specialty: str | None = None
+
+
+class MatchSessionCreate(APIModel):
+    name: str = Field(min_length=1, max_length=240)
+    items: list[MatchQueryItem] = Field(min_length=1, max_length=500)
+
+
+class ScorePart(APIModel):
+    label: str
+    score: int
+    reason: str
+
+
+class MatchCandidate(APIModel):
+    cost_item: CostItemRead
+    total_score: int
+    score_parts: list[ScorePart]
+    exclusions: list[str]
+
+
+class MatchQueryResult(APIModel):
+    query_index: int
+    query: MatchQueryItem
+    candidates: list[MatchCandidate]
+
+
+class MatchSessionRead(APIModel):
+    id: str
+    name: str
+    status: str
+    created_at: datetime
+    results: list[MatchQueryResult]
+
+
+class MatchDecisionCreate(APIModel):
+    query_index: int = Field(ge=0)
+    candidate_cost_item_id: str | None = None
+    decision: Literal["accepted", "rejected", "unmatched"]
+    note: str | None = None
+    remember_rule: bool = False
+
+
+class MetricRead(APIModel):
+    id: str
+    code: str
+    name: str
+    value: DecimalValue
+    formula: str
+    numerator_source: dict[str, Any]
+    denominator_source: dict[str, Any]
+    status: str
+
+
+class NormalizationRuleCreate(APIModel):
+    rule_type: Literal["synonym", "unit", "classification", "forbidden_match"]
+    source_value: str = Field(min_length=1, max_length=500)
+    target_value: str = Field(min_length=1, max_length=500)
+    conditions: dict[str, Any] = Field(default_factory=dict)
+
+
+class NormalizationRuleRead(NormalizationRuleCreate):
+    id: str
+    enabled: bool
+    source: str
+    created_at: datetime
+
+
+class RuleUpdate(APIModel):
+    enabled: bool
+
+
+class BackupCreate(APIModel):
+    target_directory: str
+    kind: Literal["manual", "daily", "weekly"] = "manual"
+
+
+class BackupRead(APIModel):
+    id: str
+    path: str
+    kind: str
+    created_at: datetime
+    database_sha256: str
+    file_count: int
+    status: str
+
+
+class RestoreCreate(APIModel):
+    backup_path: str
+
+
+class AISettingsRead(APIModel):
+    provider: str = "deepseek"
+    model: str
+    base_url: str
+    has_api_key: bool
+
+
+class AISettingsUpdate(APIModel):
+    model: str = Field(min_length=1, max_length=120)
+    base_url: str = Field(min_length=8, max_length=500)
+    api_key: str | None = Field(default=None, min_length=8)
+
+    @field_validator("base_url")
+    @classmethod
+    def require_https(cls, value: str) -> str:
+        if not value.startswith("https://"):
+            raise ValueError("模型接口必须使用 HTTPS")
+        return value.rstrip("/")
+
+
+class AIPreviewRequest(APIModel):
+    capability: Literal["search_intent", "candidate_review"]
+    payload: dict[str, Any]
+
+
+class AIPreviewRead(APIModel):
+    capability: str
+    redacted_payload: dict[str, Any]
+    field_names: list[str]
+    consent_required: bool
+
+
+class AIConsentUpdate(APIModel):
+    capability: Literal["search_intent", "candidate_review"]
+    approved: bool
+    remember: bool = True
+    field_names: list[str] = Field(default_factory=list)
+
+
+class NaturalLanguageQuery(APIModel):
+    text: str = Field(min_length=2, max_length=2000)
+
+
+class CandidateReviewRequest(APIModel):
+    query_item: MatchQueryItem
+    candidates: list[MatchCandidate] = Field(min_length=1, max_length=10)
+
+
+class AISuggestion(APIModel):
+    suggestion: str
+    uncertainties: list[str] = Field(default_factory=list)
+    confidence_reason: str
+    recommended_candidate_id: str | None = None
+    model: str | None = None
+    prompt_version: str = "v1"
+    confirmation_status: Literal["pending", "accepted", "rejected"] = "pending"
+
+
+class AICallRead(APIModel):
+    id: str
+    capability: str
+    provider: str
+    model: str
+    status: str
+    error: str | None
+    latency_ms: int | None
+    created_at: datetime
+
+
+class HealthRead(APIModel):
+    status: str
+    version: str
+    database: str
+    fts5: bool
+    session_token: str
