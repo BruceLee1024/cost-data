@@ -80,7 +80,7 @@ def create_app() -> FastAPI:
     init_db()
     threading.Thread(target=_run_automatic_backup, daemon=True, name="cost-data-backup").start()
     app = FastAPI(
-        title="衡鉴造价库 API",
+        title="工程造价数据库 API",
         version=__version__,
         docs_url="/api/docs",
         openapi_url="/api/openapi.json",

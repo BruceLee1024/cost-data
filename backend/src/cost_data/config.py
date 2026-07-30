@@ -11,7 +11,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="COST_DATA_", extra="ignore")
 
-    app_name: str = "衡鉴造价库"
+    app_name: str = "工程造价数据库"
     environment: str = "development"
     data_home: Path = Path.home() / "Library" / "Application Support" / "cost-data"
     host: str = "127.0.0.1"
@@ -76,4 +76,3 @@ def get_settings() -> Settings:
         settings.data_home = Path(override).expanduser().resolve()
     settings.ensure_directories()
     return settings
-
