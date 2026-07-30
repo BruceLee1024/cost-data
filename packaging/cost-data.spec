@@ -7,7 +7,11 @@ a = Analysis(
     [str(root / "backend" / "src" / "cost_data" / "launcher.py")],
     pathex=[str(root / "backend" / "src")],
     binaries=[],
-    datas=[(str(frontend), "frontend/dist")],
+    datas=[
+        (str(frontend), "frontend/dist"),
+        (str(root / "backend" / "alembic.ini"), "."),
+        (str(root / "backend" / "migrations"), "migrations"),
+    ],
     hiddenimports=["uvicorn.logging", "uvicorn.loops.auto", "uvicorn.protocols.http.auto", "uvicorn.protocols.websockets.auto", "uvicorn.lifespan.on"],
     excludes=["tkinter"],
     noarchive=False,

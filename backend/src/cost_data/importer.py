@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import shutil
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -22,6 +23,7 @@ from cost_data.models import (
     ImportJob,
     MeasureItem,
     ProjectVersion,
+    ParserProfile,
     QuotaItem,
     RateComponent,
     ResourceItem,
@@ -36,12 +38,19 @@ HEADER_ALIASES = {
     "description": {"项目特征", "项目特征描述", "工作内容", "描述"},
     "specification": {"规格型号", "规格", "型号", "特征"},
     "unit": {"计量单位", "单位"},
-    "quantity": {"工程量", "数量", "消耗量", "含量"},
+    "quantity": {"工程量", "默认工程量", "数量", "消耗量", "含量"},
     "unit_price": {"综合单价", "市场价", "单价", "除税单价"},
     "total": {"合价", "综合合价", "金额", "费用"},
     "category": {"费用类别", "类别", "构成", "费用构成"},
     "basis": {"取费基础", "计算基础", "取费基数"},
     "rate": {"费率", "取费费率"},
+    "specialty": {"专业"},
+    "applicable_scope": {"适用范围"},
+    "structure_group": {"结构分组"},
+    "related_quota_codes": {"关联定额编码"},
+    "source": {"来源"},
+    "version": {"版本"},
+    "remark": {"备注"},
 }
 
 
@@ -51,6 +60,9 @@ class ParsedTable:
     sheet_name: str
     header_row: int
     columns: dict[str, int]
+    header_rows: list[int] = field(default_factory=list)
+    header_paths: dict[str, list[str]] = field(default_factory=dict)
+    all_header_paths: dict[int, list[str]] = field(default_factory=dict)
 
 
 def file_sha256(path: Path) -> str:
@@ -105,7 +117,65 @@ def _classify(sheet_name: str, columns: dict[str, int]) -> str:
         return "quota"
     if "name" in columns and ("unit_price" in columns or "total" in columns):
         return "bill"
+    if "name" in columns and "code" in columns and "unit" in columns:
+        return "catalog_bill"
     return "unknown"
+
+
+def _merged_anchor(worksheet: Any) -> dict[tuple[int, int], tuple[int, int]]:
+    anchors: dict[tuple[int, int], tuple[int, int]] = {}
+    for merged_range in worksheet.merged_cells.ranges:
+        anchor = (merged_range.min_row, merged_range.min_col)
+        for row_no in range(merged_range.min_row, merged_range.max_row + 1):
+            for column_no in range(merged_range.min_col, merged_range.max_col + 1):
+                anchors[(row_no, column_no)] = anchor
+    return anchors
+
+
+def _header_value(worksheet: Any, anchors: dict[tuple[int, int], tuple[int, int]], row_no: int, column_no: int) -> str:
+    anchor = anchors.get((row_no, column_no), (row_no, column_no))
+    return _cell_text(worksheet.cell(*anchor).value)
+
+
+def _header_rows(worksheet: Any, header_row: int, anchors: dict[tuple[int, int], tuple[int, int]]) -> list[int]:
+    rows = [header_row]
+    for row_no in range(header_row - 1, max(header_row - 5, 0), -1):
+        if not any(_header_value(worksheet, anchors, row_no, column_no) for column_no in range(1, min(worksheet.max_column, 200) + 1)):
+            break
+        rows.insert(0, row_no)
+    return rows
+
+
+def _inspect_sheet(worksheet: Any) -> ParsedTable | None:
+    anchors = _merged_anchor(worksheet)
+    for row_no in range(1, min(worksheet.max_row, 80) + 1):
+        row = tuple(worksheet.cell(row_no, column_no) for column_no in range(1, min(worksheet.max_column, 200) + 1))
+        columns = _find_columns(row)
+        if "name" not in columns or len(columns) < 2:
+            continue
+        header_rows = _header_rows(worksheet, row_no, anchors)
+        header_paths: dict[str, list[str]] = {}
+        all_header_paths: dict[int, list[str]] = {}
+        for column_no in range(1, min(worksheet.max_column, 200) + 1):
+            path = [
+                value
+                for header_row in header_rows
+                if (value := _header_value(worksheet, anchors, header_row, column_no))
+            ]
+            if path:
+                all_header_paths[column_no] = path
+        for field, column_no in columns.items():
+            header_paths[field] = all_header_paths.get(column_no, [])
+        return ParsedTable(
+            report_type=_classify(worksheet.title, columns),
+            sheet_name=worksheet.title,
+            header_row=row_no,
+            columns=columns,
+            header_rows=header_rows,
+            header_paths=header_paths,
+            all_header_paths=all_header_paths,
+        )
+    return None
 
 
 def inspect_workbook(path: Path) -> tuple[list[str], list[ParsedTable]]:
@@ -114,18 +184,9 @@ def inspect_workbook(path: Path) -> tuple[list[str], list[ParsedTable]]:
     sheet_names = list(workbook.sheetnames)
     try:
         for worksheet in workbook.worksheets:
-            for row_no, row in enumerate(worksheet.iter_rows(min_row=1, max_row=min(25, worksheet.max_row)), start=1):
-                columns = _find_columns(row)
-                if "name" in columns and len(columns) >= 2:
-                    tables.append(
-                        ParsedTable(
-                            report_type=_classify(worksheet.title, columns),
-                            sheet_name=worksheet.title,
-                            header_row=row_no,
-                            columns=columns,
-                        )
-                    )
-                    break
+            table = _inspect_sheet(worksheet)
+            if table:
+                tables.append(table)
     finally:
         workbook.close()
     return sheet_names, tables
@@ -134,6 +195,105 @@ def inspect_workbook(path: Path) -> tuple[list[str], list[ParsedTable]]:
 def _value(row: tuple[Any, ...], columns: dict[str, int], key: str) -> Any:
     index = columns.get(key)
     return row[index - 1] if index and index <= len(row) else None
+
+
+def _table_preview(source_file: SourceFile, table: ParsedTable) -> dict[str, Any]:
+    fingerprint = hashlib.sha256(
+        json.dumps(
+            {
+                "sheet_name": normalize_text(table.sheet_name),
+                "report_type": table.report_type,
+                "header_paths": table.header_paths,
+                "all_header_paths": table.all_header_paths,
+            },
+            ensure_ascii=False,
+            sort_keys=True,
+        ).encode("utf-8")
+    ).hexdigest()
+    return {
+        "source_file_id": source_file.id,
+        "sheet_name": table.sheet_name,
+        "report_type": table.report_type,
+        "fingerprint": fingerprint,
+        "header_rows": table.header_rows or [table.header_row],
+        "columns": {
+            field: {"column": column_no, "header_path": table.header_paths.get(field, [])}
+            for field, column_no in table.columns.items()
+        },
+        "raw_columns": {str(column_no): path for column_no, path in table.all_header_paths.items()},
+        "requires_confirmation": len(table.header_rows or [table.header_row]) > 1 or table.report_type == "unknown",
+    }
+
+
+def save_parser_profiles(session: Session, tables: list[dict[str, Any]]) -> None:
+    for table in tables:
+        fingerprint = str(table.get("fingerprint", ""))
+        if not fingerprint:
+            continue
+        profile = session.scalar(select(ParserProfile).where(ParserProfile.fingerprint == fingerprint))
+        mapping = {
+            "columns": table.get("columns", {}),
+            "header_rows": table.get("header_rows", []),
+            "raw_columns": table.get("raw_columns", {}),
+        }
+        if profile:
+            profile.report_type = str(table.get("report_type", profile.report_type))
+            profile.mapping = mapping
+            profile.enabled = True
+            continue
+        session.add(
+            ParserProfile(
+                fingerprint=fingerprint,
+                name=f"{table.get('sheet_name', 'Excel')} 表头映射",
+                report_type=str(table.get("report_type", "unknown")),
+                mapping=mapping,
+            )
+        )
+
+
+def _apply_profile(session: Session, preview: dict[str, Any]) -> dict[str, Any]:
+    fingerprint = str(preview.get("fingerprint", ""))
+    if not fingerprint:
+        return preview
+    profile = session.scalar(
+        select(ParserProfile).where(ParserProfile.fingerprint == fingerprint, ParserProfile.enabled.is_(True))
+    )
+    if not profile:
+        return preview
+    preview["report_type"] = profile.report_type
+    preview["columns"] = profile.mapping.get("columns", preview["columns"])
+    preview["raw_columns"] = profile.mapping.get("raw_columns", preview.get("raw_columns", {}))
+    preview["requires_confirmation"] = False
+    preview["profile_id"] = profile.id
+    return preview
+
+
+def _table_from_preview(data: dict[str, Any]) -> ParsedTable:
+    columns = {
+        field: int(details["column"])
+        for field, details in data.get("columns", {}).items()
+        if isinstance(details, dict) and details.get("column")
+    }
+    header_rows = [int(row) for row in data.get("header_rows", [])]
+    header_paths = {
+        field: list(details.get("header_path", []))
+        for field, details in data.get("columns", {}).items()
+        if isinstance(details, dict)
+    }
+    all_header_paths = {
+        int(column_no): list(path)
+        for column_no, path in data.get("raw_columns", {}).items()
+        if str(column_no).isdigit() and isinstance(path, list)
+    }
+    return ParsedTable(
+        report_type=str(data.get("report_type", "unknown")),
+        sheet_name=str(data["sheet_name"]),
+        header_row=max(header_rows),
+        columns=columns,
+        header_rows=header_rows,
+        header_paths=header_paths,
+        all_header_paths=all_header_paths,
+    )
 
 
 def _issue(
@@ -204,6 +364,8 @@ def _parse_table(
             code = _cell_text(_value(row, table.columns, "code")) or None
             if not name and not code:
                 continue
+            if not name:
+                continue
             if name in {"合计", "小计", "总计"} or name.endswith("合计"):
                 continue
             context = (session, job.id, source_file.id, table.sheet_name, row_no)
@@ -230,7 +392,19 @@ def _parse_table(
                             "使用 Excel 打开并重新保存后再次导入",
                         )
 
-            if table.report_type == "bill":
+            if table.report_type in {"bill", "catalog_bill"}:
+                attributes = {
+                    field: _cell_text(_value(row, table.columns, field))
+                    for field in table.columns
+                    if field not in {"code", "name", "description", "specification", "unit", "quantity", "unit_price", "total"}
+                    and _cell_text(_value(row, table.columns, field))
+                }
+                for column_no, header_path in table.all_header_paths.items():
+                    if column_no in table.columns.values() or column_no > len(row):
+                        continue
+                    raw_value = _cell_text(row[column_no - 1])
+                    if raw_value:
+                        attributes.setdefault(" / ".join(header_path) or f"列{column_no}", raw_value)
                 item = CostItem(
                     project_version_id=job.project_version_id,
                     source_file_id=source_file.id,
@@ -245,6 +419,9 @@ def _parse_table(
                     total_value=total,
                     sheet_name=table.sheet_name,
                     source_row=row_no,
+                    source_cells={field: formula_sheet.cell(row=row_no, column=column_no).coordinate for field, column_no in table.columns.items()},
+                    import_attributes=attributes,
+                    item_type="library_bill" if table.report_type == "catalog_bill" else "bill",
                 )
                 session.add(item)
             elif table.report_type == "resource":
@@ -326,13 +503,13 @@ def _link_analysis(session: Session, job: ImportJob, rows: list[dict[str, Any]])
                 str(row["source_row"]),
             )
             continue
-        item = session.scalar(
+        items = session.scalars(
             select(CostItem).where(
                 CostItem.project_version_id == job.project_version_id,
                 CostItem.code == row["code"],
             )
-        )
-        if not item:
+        ).all()
+        if not items:
             _issue(
                 session,
                 job.id,
@@ -345,6 +522,20 @@ def _link_analysis(session: Session, job: ImportJob, rows: list[dict[str, Any]])
                 "确认编码或在异常复核中忽略",
             )
             continue
+        if len(items) > 1:
+            _issue(
+                session,
+                job.id,
+                row["source_file_id"],
+                "warning",
+                "ANALYSIS_LINK_AMBIGUOUS",
+                f"编码 {row['code']} 匹配到 {len(items)} 条清单项，未自动关联 {row['name']}",
+                row["sheet_name"],
+                str(row["source_row"]),
+                "在复核中按名称、单位、项目特征或父级路径确认关联",
+            )
+            continue
+        item = items[0]
         if row["type"] == "quota":
             session.add(
                 QuotaItem(
@@ -378,21 +569,38 @@ def process_import_job(job_id: str) -> None:
         job = session.get(ImportJob, job_id)
         if not job:
             return
-        job.status = "running"
+        job.status = "analyzing" if not job.parse_preview else "parsing"
         job.started_at = datetime.now(timezone.utc)
         session.commit()
-        pending_analysis: list[dict[str, Any]] = []
         try:
             files = session.scalars(
                 select(SourceFile).where(SourceFile.import_job_id == job.id).order_by(SourceFile.original_name)
             ).all()
+            file_by_id = {source_file.id: source_file for source_file in files}
+            if not job.parse_preview:
+                preview_tables: list[dict[str, Any]] = []
+                for source_file in files:
+                    path = settings.raw_dir / source_file.relative_path
+                    sheet_names, tables = inspect_workbook(path)
+                    source_file.sheet_names = sheet_names
+                    source_file.report_type = next((table.report_type for table in tables if table.report_type != "unknown"), "unknown")
+                    preview_tables.extend(_apply_profile(session, _table_preview(source_file, table)) for table in tables)
+                job.parse_preview = {"tables": preview_tables}
+                if any(table["requires_confirmation"] for table in preview_tables):
+                    job.status = "mapping_review"
+                    job.progress = 20
+                    session.commit()
+                    return
+            pending_analysis: list[dict[str, Any]] = []
+            tables_by_file: dict[str, list[ParsedTable]] = {}
+            for table_data in job.parse_preview.get("tables", []):
+                source_file_id = str(table_data.get("source_file_id", ""))
+                if source_file_id in file_by_id:
+                    tables_by_file.setdefault(source_file_id, []).append(_table_from_preview(table_data))
             for position, source_file in enumerate(files, start=1):
                 path = settings.raw_dir / source_file.relative_path
                 try:
-                    sheet_names, tables = inspect_workbook(path)
-                    source_file.sheet_names = sheet_names
-                    known_tables = [table for table in tables if table.report_type != "unknown"]
-                    source_file.report_type = known_tables[0].report_type if known_tables else "unknown"
+                    known_tables = [table for table in tables_by_file.get(source_file.id, []) if table.report_type != "unknown"]
                     if not known_tables:
                         _issue(
                             session,
@@ -401,7 +609,7 @@ def process_import_job(job_id: str) -> None:
                             "warning",
                             "REPORT_UNRECOGNIZED",
                             "未识别到受支持的报表表头",
-                            action="核对文件是否为清单、综合单价分析、工料机或措施项目表",
+                            action="确认表头映射或核对文件是否为受支持的报表",
                         )
                     for table in known_tables:
                         _parse_table(session, job, source_file, path, table, pending_analysis)

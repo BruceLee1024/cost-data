@@ -38,6 +38,7 @@ def source_ref(item: CostItem, source_file: SourceFile) -> SourceRef:
         start_row=item.source_row,
         end_row=item.source_end_row,
         cell_range=f"{item.source_row}:{item.source_end_row or item.source_row}",
+        field_cells=item.source_cells,
     )
 
 
@@ -63,6 +64,7 @@ def serialize_cost_item(item: CostItem, project: Project, source_file: SourceFil
         project_id=project.id,
         project_name=project.name,
         project_version_id=item.project_version_id,
+        item_type=item.item_type,
         code=item.code,
         name=item.name,
         normalized_name=item.normalized_name,
@@ -78,6 +80,7 @@ def serialize_cost_item(item: CostItem, project: Project, source_file: SourceFil
         pricing_mode=project.pricing_mode,
         result_stage=project.result_stage,
         source=source_ref(item, source_file),
+        import_attributes=item.import_attributes,
         components=components,
     )
 

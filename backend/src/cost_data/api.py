@@ -20,13 +20,14 @@ from cost_data.ai import (
     redact_payload,
     set_ai_configuration,
     set_api_key,
+    suggest_import_mapping,
 )
 from cost_data.backups import create_backup, stage_restore, validate_backup
 from cost_data.config import get_settings
 from cost_data.db import get_db, rebuild_fts
 from cost_data.exports import export_quality_report, export_reference_prices
 from cost_data.fixedpoint import from_scaled, to_scaled
-from cost_data.importer import archive_file, next_version_no, process_import_job
+from cost_data.importer import archive_file, next_version_no, process_import_job, save_parser_profiles
 from cost_data.metrics import calculate_metrics, serialize_metric
 from cost_data.models import (
     AICall,
@@ -59,6 +60,9 @@ from cost_data.schemas import (
     DecimalValue,
     HealthRead,
     ImportIssueRead,
+    ImportMappingSuggestion,
+    ImportMappingConfirmation,
+    ImportParsePreview,
     ImportRead,
     IssueResolve,
     MatchDecisionCreate,
@@ -145,6 +149,7 @@ def _serialize_import(session: Session, job: ImportJob) -> ImportRead:
         total_files=job.total_files,
         processed_files=job.processed_files,
         error_summary=job.error_summary,
+        parse_preview_available=bool(job.parse_preview),
         started_at=job.started_at,
         finished_at=job.finished_at,
         created_at=job.created_at,
@@ -332,6 +337,50 @@ def get_import(job_id: str, session: DB) -> ImportRead:
     if not job:
         raise HTTPException(status_code=404, detail="导入任务不存在")
     return _serialize_import(session, job)
+
+
+@router.get("/imports/{job_id}/parse-preview", response_model=ImportParsePreview)
+def get_import_parse_preview(job_id: str, session: DB) -> ImportParsePreview:
+    job = session.get(ImportJob, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="导入任务不存在")
+    return ImportParsePreview.model_validate(job.parse_preview or {})
+
+
+@router.post("/imports/{job_id}/confirm-mapping", response_model=ImportRead)
+def confirm_import_mapping(
+    job_id: str,
+    payload: ImportMappingConfirmation,
+    background_tasks: BackgroundTasks,
+    session: DB,
+) -> ImportRead:
+    job = session.get(ImportJob, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="导入任务不存在")
+    if job.status != "mapping_review":
+        raise HTTPException(status_code=409, detail="导入任务当前无需确认映射")
+    job.parse_preview = {"tables": payload.tables}
+    if payload.save_profile:
+        save_parser_profiles(session, payload.tables)
+    job.status = "queued"
+    session.commit()
+    background_tasks.add_task(process_import_job, job.id)
+    return _serialize_import(session, job)
+
+
+@router.post("/imports/{job_id}/ai-mapping-suggestion", response_model=ImportMappingSuggestion)
+def suggest_import_mapping_for_job(job_id: str, session: DB) -> ImportMappingSuggestion:
+    job = session.get(ImportJob, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="导入任务不存在")
+    if job.status != "mapping_review":
+        raise HTTPException(status_code=409, detail="仅待确认映射的导入任务可请求 AI 建议")
+    try:
+        return suggest_import_mapping(session, job.parse_preview)
+    except PermissionError as exc:
+        raise HTTPException(status_code=403, detail=str(exc)) from exc
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
 
 
 @router.get("/imports/{job_id}/issues", response_model=list[ImportIssueRead])

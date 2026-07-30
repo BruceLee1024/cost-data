@@ -82,6 +82,7 @@ class ImportJob(Base, TimestampMixin):
     total_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     processed_files: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     error_summary: Mapped[str | None] = mapped_column(Text)
+    parse_preview: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     started_at: Mapped[datetime | None]
     finished_at: Mapped[datetime | None]
 
@@ -107,6 +108,17 @@ class SourceFile(Base, TimestampMixin):
     sheet_names: Mapped[list[str]] = mapped_column(JSON, default=list, nullable=False)
 
     project_version: Mapped[ProjectVersion] = relationship(back_populates="source_files")
+
+
+class ParserProfile(Base, TimestampMixin):
+    __tablename__ = "parser_profiles"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    fingerprint: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(240), nullable=False)
+    report_type: Mapped[str] = mapped_column(String(80), nullable=False)
+    mapping: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
 class ImportIssue(Base, TimestampMixin):
@@ -156,6 +168,8 @@ class CostItem(Base, TimestampMixin):
     sheet_name: Mapped[str] = mapped_column(String(240), nullable=False)
     source_row: Mapped[int] = mapped_column(Integer, nullable=False)
     source_end_row: Mapped[int | None]
+    source_cells: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
+    import_attributes: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     status: Mapped[str] = mapped_column(String(24), default="active", nullable=False, index=True)
 
     project_version: Mapped[ProjectVersion] = relationship(back_populates="cost_items")
@@ -346,4 +360,3 @@ class AppSetting(Base, TimestampMixin):
 
     key: Mapped[str] = mapped_column(String(120), primary_key=True)
     value: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
-

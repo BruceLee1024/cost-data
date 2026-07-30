@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from cost_data.config import get_settings
 from cost_data.models import AICall, AIConsent, AppSetting
-from cost_data.schemas import AISuggestion, CandidateReviewRequest, SearchIntent
+from cost_data.schemas import AISuggestion, CandidateReviewRequest, ImportMappingSuggestion, SearchIntent
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -165,3 +165,18 @@ def review_candidates(session: Session, payload: CandidateReviewRequest) -> AISu
     )
     _base_url, model = get_ai_configuration(session)
     return suggestion.model_copy(update={"model": model, "prompt_version": "v1"})
+
+
+def suggest_import_mapping(session: Session, preview: dict[str, Any]) -> ImportMappingSuggestion:
+    tables = preview.get("tables", [])
+    messages = [
+        {
+            "role": "system",
+            "content": (
+                "你是工程造价 Excel 表头映射助手。只输出 JSON。仅依据工作表名称、表头路径和当前候选字段，"
+                "建议 report_type 和 columns 映射。不得编造数据，不得删除原始列，不得将结果标记为已确认。"
+            ),
+        },
+        {"role": "user", "content": json.dumps({"tables": tables}, ensure_ascii=False)},
+    ]
+    return call_structured(session, "import_parsing", messages, ImportMappingSuggestion, {"tables": tables})

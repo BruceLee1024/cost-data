@@ -24,6 +24,7 @@ class SourceRef(APIModel):
     start_row: int
     end_row: int | None = None
     cell_range: str | None = None
+    field_cells: dict[str, str] = Field(default_factory=dict)
 
 
 class ProjectCreate(APIModel):
@@ -80,6 +81,7 @@ class ImportRead(APIModel):
     total_files: int
     processed_files: int
     error_summary: str | None
+    parse_preview_available: bool = False
     started_at: datetime | None
     finished_at: datetime | None
     created_at: datetime
@@ -106,6 +108,15 @@ class IssueResolve(APIModel):
     resolution: str = Field(min_length=1, max_length=1000)
 
 
+class ImportMappingConfirmation(APIModel):
+    tables: list[dict[str, Any]] = Field(min_length=1)
+    save_profile: bool = False
+
+
+class ImportParsePreview(APIModel):
+    tables: list[dict[str, Any]] = Field(default_factory=list)
+
+
 class CostComponentRead(APIModel):
     id: str
     category: str
@@ -119,6 +130,7 @@ class CostItemRead(APIModel):
     project_id: str
     project_name: str
     project_version_id: str
+    item_type: str
     code: str | None
     name: str
     normalized_name: str
@@ -134,6 +146,7 @@ class CostItemRead(APIModel):
     pricing_mode: str
     result_stage: str
     source: SourceRef
+    import_attributes: dict[str, Any] = Field(default_factory=dict)
     components: list[CostComponentRead] = Field(default_factory=list)
 
 
@@ -291,7 +304,7 @@ class AISettingsUpdate(APIModel):
 
 
 class AIPreviewRequest(APIModel):
-    capability: Literal["search_intent", "candidate_review"]
+    capability: Literal["search_intent", "candidate_review", "import_parsing"]
     payload: dict[str, Any]
 
 
@@ -303,7 +316,7 @@ class AIPreviewRead(APIModel):
 
 
 class AIConsentUpdate(APIModel):
-    capability: Literal["search_intent", "candidate_review"]
+    capability: Literal["search_intent", "candidate_review", "import_parsing"]
     approved: bool
     remember: bool = True
     field_names: list[str] = Field(default_factory=list)
@@ -326,6 +339,13 @@ class AISuggestion(APIModel):
     model: str | None = None
     prompt_version: str = "v1"
     confirmation_status: Literal["pending", "accepted", "rejected"] = "pending"
+
+
+class ImportMappingSuggestion(APIModel):
+    tables: list[dict[str, Any]] = Field(default_factory=list)
+    uncertainties: list[str] = Field(default_factory=list)
+    confidence_reason: str
+    confirmation_status: Literal["pending"] = "pending"
 
 
 class AICallRead(APIModel):

@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Generator
+from pathlib import Path
+import sys
 
+from alembic import command
+from alembic.config import Config
 from sqlalchemy import Engine, create_engine, event, text
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -29,6 +33,10 @@ def configure_sqlite(dbapi_connection, _connection_record) -> None:  # type: ign
 
 
 def init_db() -> None:
+    base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
+    alembic_config = Config(str(base_dir / "alembic.ini"))
+    alembic_config.set_main_option("script_location", str(base_dir / "migrations"))
+    command.upgrade(alembic_config, "head")
     Base.metadata.create_all(bind=engine)
     with engine.begin() as connection:
         connection.execute(
@@ -78,4 +86,3 @@ def get_db() -> Generator[Session, None, None]:
         yield session
     finally:
         session.close()
-
