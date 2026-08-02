@@ -43,6 +43,10 @@ class Project(Base, TimestampMixin):
     area_scale: Mapped[int] = mapped_column(Integer, default=6, nullable=False)
     area_unit: Mapped[str] = mapped_column(String(32), default="m2", nullable=False)
     notes: Mapped[str | None] = mapped_column(Text)
+    # Kept as a typed JSON document so historical projects can be enriched gradually.
+    profile: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    # Price meaning belongs to the historical project, never to an inferred price.
+    price_context: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     versions: Mapped[list[ProjectVersion]] = relationship(
         back_populates="project", cascade="all, delete-orphan"
@@ -170,6 +174,8 @@ class CostItem(Base, TimestampMixin):
     source_end_row: Mapped[int | None]
     source_cells: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
     import_attributes: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
+    hierarchy_path: Mapped[str | None] = mapped_column(Text)
+    data_status: Mapped[str] = mapped_column(String(24), default="parsed", nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(24), default="active", nullable=False, index=True)
 
     project_version: Mapped[ProjectVersion] = relationship(back_populates="cost_items")
@@ -191,6 +197,8 @@ class RateComponent(Base, TimestampMixin):
     source_file_id: Mapped[str] = mapped_column(ForeignKey("source_files.id", ondelete="CASCADE"))
     sheet_name: Mapped[str] = mapped_column(String(240), nullable=False)
     source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    link_status: Mapped[str] = mapped_column(String(24), default="pending", nullable=False, index=True)
+    link_evidence: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     cost_item: Mapped[CostItem] = relationship(back_populates="components")
 
@@ -208,6 +216,8 @@ class QuotaItem(Base, TimestampMixin):
     source_file_id: Mapped[str] = mapped_column(ForeignKey("source_files.id", ondelete="CASCADE"))
     sheet_name: Mapped[str] = mapped_column(String(240), nullable=False)
     source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    link_status: Mapped[str] = mapped_column(String(24), default="pending", nullable=False, index=True)
+    link_evidence: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
 
     cost_item: Mapped[CostItem] = relationship(back_populates="quotas")
 
@@ -234,6 +244,9 @@ class ResourceItem(Base, TimestampMixin):
     amount_scale: Mapped[int] = mapped_column(Integer, default=6, nullable=False)
     sheet_name: Mapped[str] = mapped_column(String(240), nullable=False)
     source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_category: Mapped[str | None] = mapped_column(String(120))
+    source_cells: Mapped[dict[str, str]] = mapped_column(JSON, default=dict, nullable=False)
+    data_status: Mapped[str] = mapped_column(String(24), default="parsed", nullable=False, index=True)
 
 
 class MeasureItem(Base, TimestampMixin):
@@ -284,6 +297,31 @@ class ProjectMetric(Base, TimestampMixin):
     numerator_source: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     denominator_source: Mapped[dict[str, Any]] = mapped_column(JSON, default=dict, nullable=False)
     status: Mapped[str] = mapped_column(String(24), default="calculated", nullable=False)
+
+
+class UnitConversion(Base, TimestampMixin):
+    __tablename__ = "unit_conversions"
+    __table_args__ = (Index("ix_unit_conversion_source_target", "source_unit", "target_unit", unique=True),)
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    source_unit: Mapped[str] = mapped_column(String(40), nullable=False)
+    target_unit: Mapped[str] = mapped_column(String(40), nullable=False)
+    factor_value: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    factor_scale: Mapped[int] = mapped_column(Integer, default=6, nullable=False)
+    basis: Mapped[str] = mapped_column(String(500), nullable=False)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+
+class MetricTemplate(Base, TimestampMixin):
+    __tablename__ = "metric_templates"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=new_id)
+    code: Mapped[str] = mapped_column(String(80), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(160), nullable=False)
+    unit: Mapped[str] = mapped_column(String(40), nullable=False)
+    formula: Mapped[str] = mapped_column(Text, nullable=False)
+    description: Mapped[str | None] = mapped_column(Text)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
 
 
 class NormalizationRule(Base, TimestampMixin):

@@ -32,6 +32,15 @@ class Settings(BaseSettings):
         return self.database_dir / "cost-data.sqlite3"
 
     @property
+    def library_paths(self) -> dict[str, Path]:
+        """Business-library files.  Project and import metadata stay in database_path."""
+        return {
+            "catalog": self.database_dir / "catalog.sqlite3",
+            "resource": self.database_dir / "resource.sqlite3",
+            "quota": self.database_dir / "quota.sqlite3",
+        }
+
+    @property
     def raw_dir(self) -> Path:
         return self.data_home / "raw"
 

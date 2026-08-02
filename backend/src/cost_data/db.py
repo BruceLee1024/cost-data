@@ -6,7 +6,7 @@ import sys
 
 from alembic import command
 from alembic.config import Config
-from sqlalchemy import Engine, create_engine, event, text
+from sqlalchemy import Engine, create_engine, event, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from cost_data.config import get_settings
@@ -36,6 +36,24 @@ def init_db() -> None:
     base_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
     alembic_config = Config(str(base_dir / "alembic.ini"))
     alembic_config.set_main_option("script_location", str(base_dir / "migrations"))
+    inspector = inspect(engine)
+    tables = set(inspector.get_table_names())
+    revision = None
+    if "alembic_version" in tables:
+        with engine.connect() as connection:
+            revision = connection.scalar(text("SELECT version_num FROM alembic_version LIMIT 1"))
+    current_schema = (
+        "parser_profiles" in tables
+        and "parse_preview" in {column["name"] for column in inspector.get_columns("import_jobs")}
+        and {"source_cells", "import_attributes"}.issubset(
+            {column["name"] for column in inspector.get_columns("cost_items")}
+        )
+    )
+    if revision == "0f3a8e7d12c4" and not current_schema:
+        command.stamp(alembic_config, "bd9d97625f1a")
+    elif not revision and "projects" in tables:
+        # Releases before Alembic used create_all(), so their schema has no revision marker.
+        command.stamp(alembic_config, "head" if current_schema else "bd9d97625f1a")
     command.upgrade(alembic_config, "head")
     Base.metadata.create_all(bind=engine)
     with engine.begin() as connection:

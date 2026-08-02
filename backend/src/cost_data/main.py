@@ -5,6 +5,7 @@ import sys
 import threading
 from datetime import datetime
 from pathlib import Path
+from urllib.parse import urlparse
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
@@ -19,6 +20,7 @@ from cost_data.backups import apply_pending_restore, create_backup, prune_backup
 from cost_data.config import get_settings
 from cost_data.db import init_db
 from cost_data.db import SessionLocal
+from cost_data.libraries import init_libraries, sync_published_versions
 from cost_data.logging_setup import configure_logging
 from cost_data.models import AppSetting
 
@@ -61,12 +63,13 @@ class LocalSecurityMiddleware(BaseHTTPMiddleware):
                     content={"error": {"code": "INVALID_SESSION", "message": "本地会话令牌无效"}},
                 )
             origin = request.headers.get("origin")
-            if origin and origin not in {
-                f"http://127.0.0.1:{settings.port}",
-                f"http://localhost:{settings.port}",
-                "http://127.0.0.1:5173",
-                "http://localhost:5173",
-            }:
+            parsed_origin = urlparse(origin) if origin else None
+            local_origin = bool(
+                parsed_origin
+                and parsed_origin.scheme == "http"
+                and parsed_origin.hostname in {"127.0.0.1", "localhost"}
+            )
+            if origin and not local_origin:
                 return JSONResponse(
                     status_code=403,
                     content={"error": {"code": "INVALID_ORIGIN", "message": "请求来源无效"}},
@@ -78,6 +81,11 @@ def create_app() -> FastAPI:
     configure_logging()
     apply_pending_restore()
     init_db()
+    init_libraries()
+    # Existing installations used one database. Mirror published history on startup
+    # so upgrading is automatic and retry-safe.
+    with SessionLocal() as session:
+        sync_published_versions(session)
     threading.Thread(target=_run_automatic_backup, daemon=True, name="cost-data-backup").start()
     app = FastAPI(
         title="工程造价数据库 API",

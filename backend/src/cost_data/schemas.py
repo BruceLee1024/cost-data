@@ -40,6 +40,12 @@ class ProjectCreate(APIModel):
     area: str | None = None
     area_unit: str = "m2"
     notes: str | None = None
+    profile: dict[str, Any] = Field(default_factory=dict)
+    price_context: dict[str, Any] = Field(default_factory=dict)
+
+
+class ProjectProfileUpdate(APIModel):
+    profile: dict[str, Any] = Field(default_factory=dict)
 
 
 class ProjectSummary(APIModel):
@@ -51,6 +57,9 @@ class ProjectSummary(APIModel):
     pricing_mode: str
     result_stage: str
     project_type: str | None
+    profile: dict[str, Any] = Field(default_factory=dict)
+    price_context: dict[str, Any] = Field(default_factory=dict)
+    comparability: Literal["searchable", "restricted", "benchmark_candidate"] = "restricted"
     area: DecimalValue
     latest_version_id: str | None = None
     latest_version_no: int | None = None
@@ -70,6 +79,14 @@ class ProjectVersionRead(APIModel):
     created_at: datetime
     file_count: int = 0
     item_count: int = 0
+
+
+class ProjectDetail(APIModel):
+    project: ProjectSummary
+    versions: list[ProjectVersionRead]
+    data_counts: dict[str, int]
+    metrics: list["MetricRead"]
+    source_files: list[SourceRef]
 
 
 class ImportRead(APIModel):
@@ -164,7 +181,11 @@ class SearchIntent(APIModel):
     specification: str | None = None
     price_min: str | None = None
     price_max: str | None = None
+    data_type: Literal["bill", "quota", "resource", "measure", "fee_rate", "metric", "all"] = "all"
+    resource_kind: Literal["labor", "material", "machine"] | None = None
+    data_status: Literal["raw", "parsed", "reviewed", "published", "deprecated", "restricted"] | None = None
     cursor: str | None = None
+    offset: int = Field(default=0, ge=0)
     limit: int = Field(default=50, ge=1, le=200)
 
 
@@ -244,6 +265,121 @@ class MetricRead(APIModel):
     numerator_source: dict[str, Any]
     denominator_source: dict[str, Any]
     status: str
+
+
+class BenchmarkRead(APIModel):
+    metric_code: str
+    sample_count: int
+    mean: DecimalValue
+    p25: DecimalValue
+    p50: DecimalValue
+    p75: DecimalValue
+    samples: list[dict[str, Any]]
+
+
+class WorkspaceRecord(APIModel):
+    id: str
+    library: Literal["catalog", "resource", "quota"] | None = None
+    data_type: str
+    name: str
+    code: str | None = None
+    specification: str | None = None
+    description: str | None = None
+    unit: str | None = None
+    quantity: DecimalValue
+    unit_price: DecimalValue
+    total: DecimalValue
+    project_id: str
+    project_name: str
+    project_version_id: str
+    region: str
+    pricing_date: str
+    specialty: str
+    pricing_mode: str
+    result_stage: str
+    comparability: Literal["searchable", "restricted", "benchmark_candidate"]
+    data_status: Literal["raw", "parsed", "reviewed", "published", "deprecated"] = "published"
+    price_context: dict[str, Any] = Field(default_factory=dict)
+    warnings: list[str] = Field(default_factory=list)
+    source: SourceRef | None = None
+    attributes: dict[str, Any] = Field(default_factory=dict)
+
+
+class WorkspaceSearchResult(APIModel):
+    items: list[WorkspaceRecord]
+    total: int
+
+
+class LibrarySummary(APIModel):
+    key: Literal["catalog", "resource", "quota"]
+    name: str
+    database: str
+    status: str
+    record_count: int
+    project_count: int
+    updated_at: datetime | None = None
+
+
+class LibraryRecordRead(WorkspaceRecord):
+    payload: dict[str, Any] = Field(default_factory=dict)
+
+
+class BillRecordUpdate(APIModel):
+    """User-managed corrections for a published bill-library record."""
+
+    code: str | None = Field(default=None, max_length=120)
+    name: str | None = Field(default=None, max_length=500)
+    specification: str | None = Field(default=None, max_length=2000)
+    description: str | None = Field(default=None, max_length=20000)
+    unit: str | None = Field(default=None, max_length=40)
+    quantity: str | None = None
+    unit_price: str | None = None
+    total: str | None = None
+
+
+class UnitConversionCreate(APIModel):
+    source_unit: str = Field(min_length=1, max_length=40)
+    target_unit: str = Field(min_length=1, max_length=40)
+    factor: str
+    basis: str = Field(min_length=1, max_length=500)
+
+
+class UnitConversionRead(UnitConversionCreate):
+    id: str
+    enabled: bool
+
+
+class UnitConversionUpdate(APIModel):
+    enabled: bool
+
+
+class MetricTemplateCreate(APIModel):
+    code: str = Field(min_length=1, max_length=80)
+    name: str = Field(min_length=1, max_length=160)
+    unit: str = Field(min_length=1, max_length=40)
+    formula: str = Field(min_length=1)
+    description: str | None = None
+
+
+class MetricTemplateRead(MetricTemplateCreate):
+    id: str
+    enabled: bool
+
+
+class QualityIssueRead(APIModel):
+    severity: Literal["error", "warning"]
+    code: str
+    message: str
+    status: str = "open"
+    project_version_id: str
+    source: SourceRef | None = None
+
+
+class QualityReportRead(APIModel):
+    project_version_id: str
+    publishable: bool
+    summary: dict[str, int]
+    issues: list[QualityIssueRead]
 
 
 class NormalizationRuleCreate(APIModel):

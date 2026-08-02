@@ -18,25 +18,31 @@ depends_on = None
 
 
 def upgrade() -> None:
-    with op.batch_alter_table("import_jobs") as batch_op:
-        batch_op.add_column(sa.Column("parse_preview", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
-    with op.batch_alter_table("cost_items") as batch_op:
-        batch_op.add_column(sa.Column("source_cells", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
-        batch_op.add_column(sa.Column("import_attributes", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
-    op.create_table(
-        "parser_profiles",
-        sa.Column("id", sa.String(length=36), nullable=False),
-        sa.Column("fingerprint", sa.String(length=64), nullable=False),
-        sa.Column("name", sa.String(length=240), nullable=False),
-        sa.Column("report_type", sa.String(length=80), nullable=False),
-        sa.Column("mapping", sa.JSON(), nullable=False),
-        sa.Column("enabled", sa.Boolean(), nullable=False),
-        sa.Column("created_at", sa.DateTime(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(), nullable=False),
-        sa.PrimaryKeyConstraint("id"),
-        sa.UniqueConstraint("fingerprint"),
-    )
-    op.create_index("ix_parser_profiles_fingerprint", "parser_profiles", ["fingerprint"], unique=False)
+    inspector = sa.inspect(op.get_bind())
+    if "parse_preview" not in {column["name"] for column in inspector.get_columns("import_jobs")}:
+        with op.batch_alter_table("import_jobs") as batch_op:
+            batch_op.add_column(sa.Column("parse_preview", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
+    if "source_cells" not in {column["name"] for column in inspector.get_columns("cost_items")}:
+        with op.batch_alter_table("cost_items") as batch_op:
+            batch_op.add_column(sa.Column("source_cells", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
+    if "import_attributes" not in {column["name"] for column in inspector.get_columns("cost_items")}:
+        with op.batch_alter_table("cost_items") as batch_op:
+            batch_op.add_column(sa.Column("import_attributes", sa.JSON(), nullable=False, server_default=sa.text("'{}'")))
+    if "parser_profiles" not in inspector.get_table_names():
+        op.create_table(
+            "parser_profiles",
+            sa.Column("id", sa.String(length=36), nullable=False),
+            sa.Column("fingerprint", sa.String(length=64), nullable=False),
+            sa.Column("name", sa.String(length=240), nullable=False),
+            sa.Column("report_type", sa.String(length=80), nullable=False),
+            sa.Column("mapping", sa.JSON(), nullable=False),
+            sa.Column("enabled", sa.Boolean(), nullable=False),
+            sa.Column("created_at", sa.DateTime(), nullable=False),
+            sa.Column("updated_at", sa.DateTime(), nullable=False),
+            sa.PrimaryKeyConstraint("id"),
+            sa.UniqueConstraint("fingerprint"),
+        )
+        op.create_index("ix_parser_profiles_fingerprint", "parser_profiles", ["fingerprint"], unique=False)
 
 
 def downgrade() -> None:

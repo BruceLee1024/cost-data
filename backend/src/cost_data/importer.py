@@ -41,7 +41,7 @@ HEADER_ALIASES = {
     "quantity": {"工程量", "默认工程量", "数量", "消耗量", "含量"},
     "unit_price": {"综合单价", "市场价", "单价", "除税单价"},
     "total": {"合价", "综合合价", "金额", "费用"},
-    "category": {"费用类别", "类别", "构成", "费用构成"},
+    "category": {"费用类别", "类别", "构成", "费用构成", "资源类别", "工料机类别"},
     "basis": {"取费基础", "计算基础", "取费基数"},
     "rate": {"费率", "取费费率"},
     "specialty": {"专业"},
@@ -105,10 +105,12 @@ def _find_columns(row: tuple[Cell, ...]) -> dict[str, int]:
 
 def _classify(sheet_name: str, columns: dict[str, int]) -> str:
     name = normalize_text(sheet_name)
-    if "综合单价分析" in name or ("category" in columns and "code" in columns and "total" in columns):
-        return "rate_analysis"
+    # A resource category column is common in 工料机汇总表.  Sheet intent takes
+    # precedence over the generic category/code/amount shape of a rate analysis.
     if "工料机" in name or "材料" in name or "人工" in name or "机械" in name:
         return "resource"
+    if "综合单价分析" in name or ("category" in columns and "code" in columns and "total" in columns):
+        return "rate_analysis"
     if "措施" in name:
         return "measure"
     if "取费" in name or "费率" in name or "rate" in columns:
@@ -342,6 +344,23 @@ def _safe_scaled(value: Any, *, issue_context: tuple[Session, str, str, str, int
         return None
 
 
+def _resource_kind(source_category: str, name: str) -> tuple[str, bool]:
+    """Prefer a mapped source category; only use a name heuristic as a reviewable fallback."""
+    normalized = normalize_text(source_category)
+    if any(word in normalized for word in ("人工", "劳务", "工日")):
+        return "labor", True
+    if any(word in normalized for word in ("机械", "机具", "台班")):
+        return "machine", True
+    if any(word in normalized for word in ("材料", "设备", "主材")):
+        return "material", True
+    lower_name = normalize_text(name)
+    if "人工" in lower_name:
+        return "labor", False
+    if "机械" in lower_name or "台班" in lower_name:
+        return "machine", False
+    return "material", False
+
+
 def _parse_table(
     session: Session,
     job: ImportJob,
@@ -356,6 +375,7 @@ def _parse_table(
     try:
         values_sheet = values_book[table.sheet_name]
         formula_sheet = formula_book[table.sheet_name]
+        hierarchy: list[str] = []
         for row_no, row in enumerate(
             values_sheet.iter_rows(min_row=table.header_row + 1, values_only=True),
             start=table.header_row + 1,
@@ -373,6 +393,11 @@ def _parse_table(
             quantity = _safe_scaled(_value(row, table.columns, "quantity"), issue_context=context, field="工程量")
             unit_price = _safe_scaled(_value(row, table.columns, "unit_price"), issue_context=context, field="单价")
             total = _safe_scaled(_value(row, table.columns, "total"), issue_context=context, field="金额")
+
+            # Preserve source structure instead of collapsing identically coded rows.
+            if table.report_type in {"bill", "catalog_bill"} and not code and name and quantity is None and unit_price is None and total is None:
+                hierarchy.append(name)
+                continue
 
             for numeric_field in ("quantity", "unit_price", "total", "rate"):
                 col = table.columns.get(numeric_field)
@@ -421,12 +446,16 @@ def _parse_table(
                     source_row=row_no,
                     source_cells={field: formula_sheet.cell(row=row_no, column=column_no).coordinate for field, column_no in table.columns.items()},
                     import_attributes=attributes,
+                    hierarchy_path=" / ".join(hierarchy) or None,
+                    data_status="parsed",
                     item_type="library_bill" if table.report_type == "catalog_bill" else "bill",
                 )
                 session.add(item)
             elif table.report_type == "resource":
-                lower_name = name.lower()
-                kind = "labor" if "人工" in lower_name else "machine" if "机械" in lower_name else "material"
+                source_category = _cell_text(_value(row, table.columns, "category"))
+                kind, confirmed = _resource_kind(source_category, name)
+                if not confirmed:
+                    _issue(session, job.id, source_file.id, "warning", "RESOURCE_KIND_UNCONFIRMED", f"{name} 未提供可确认的工料机类别，暂按{kind}处理", table.sheet_name, str(row_no), "确认来源类别后再用于分类统计")
                 session.add(
                     ResourceItem(
                         project_version_id=job.project_version_id,
@@ -441,6 +470,9 @@ def _parse_table(
                         amount_value=total,
                         sheet_name=table.sheet_name,
                         source_row=row_no,
+                        source_category=source_category or None,
+                        source_cells={field: formula_sheet.cell(row=row_no, column=column_no).coordinate for field, column_no in table.columns.items()},
+                        data_status="parsed",
                     )
                 )
             elif table.report_type == "measure":
@@ -536,6 +568,12 @@ def _link_analysis(session: Session, job: ImportJob, rows: list[dict[str, Any]])
             )
             continue
         item = items[0]
+        evidence = {
+            "strategy": "project_version + code",
+            "candidate_count": 1,
+            "candidate_cost_item_id": item.id,
+            "analysis_source": {"file_id": row["source_file_id"], "sheet_name": row["sheet_name"], "row": row["source_row"]},
+        }
         if row["type"] == "quota":
             session.add(
                 QuotaItem(
@@ -547,6 +585,8 @@ def _link_analysis(session: Session, job: ImportJob, rows: list[dict[str, Any]])
                     source_file_id=row["source_file_id"],
                     sheet_name=row["sheet_name"],
                     source_row=row["source_row"],
+                    link_status="confirmed",
+                    link_evidence=evidence,
                 )
             )
         else:
@@ -559,6 +599,8 @@ def _link_analysis(session: Session, job: ImportJob, rows: list[dict[str, Any]])
                     source_file_id=row["source_file_id"],
                     sheet_name=row["sheet_name"],
                     source_row=row["source_row"],
+                    link_status="confirmed",
+                    link_evidence=evidence,
                 )
             )
 

@@ -28,14 +28,18 @@ def create_backup(target_directory: Path, kind: str = "manual") -> dict[str, Any
     temp_dir = target_directory.expanduser().resolve() / f".{folder_name}.tmp"
     final_dir = target_directory.expanduser().resolve() / folder_name
     temp_dir.mkdir(parents=True, exist_ok=False)
-    snapshot = temp_dir / "cost-data.sqlite3"
-    source = sqlite3.connect(settings.database_path)
-    destination = sqlite3.connect(snapshot)
-    try:
-        source.backup(destination)
-    finally:
-        destination.close()
-        source.close()
+    database_paths = {"center": settings.database_path, **settings.library_paths}
+    database_files: list[dict[str, str]] = []
+    for key, source_path in database_paths.items():
+        snapshot = temp_dir / source_path.name
+        source = sqlite3.connect(source_path)
+        destination = sqlite3.connect(snapshot)
+        try:
+            source.backup(destination)
+        finally:
+            destination.close()
+            source.close()
+        database_files.append({"key": key, "file": snapshot.name, "sha256": _sha256(snapshot)})
     raw_destination = temp_dir / "raw"
     if settings.raw_dir.exists():
         shutil.copytree(settings.raw_dir, raw_destination)
@@ -53,7 +57,8 @@ def create_backup(target_directory: Path, kind: str = "manual") -> dict[str, Any
         "id": backup_id,
         "kind": kind,
         "created_at": created_at.isoformat(),
-        "database_sha256": _sha256(snapshot),
+        "database_sha256": database_files[0]["sha256"],
+        "databases": database_files,
         "file_count": len(files),
         "files": files,
         "status": "complete",
@@ -86,17 +91,22 @@ def validate_backup(backup_path: Path) -> dict[str, Any]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     if _sha256(snapshot) != manifest["database_sha256"]:
         raise ValueError("数据库快照校验失败")
+    for entry in manifest.get("databases", []):
+        path = folder / entry["file"]
+        if not path.exists() or _sha256(path) != entry["sha256"]:
+            raise ValueError(f"数据库快照校验失败: {entry['file']}")
     for entry in manifest.get("files", []):
         path = folder / entry["path"]
         if not path.exists() or _sha256(path) != entry["sha256"]:
             raise ValueError(f"原始文件校验失败: {entry['path']}")
-    connection = sqlite3.connect(snapshot)
-    try:
-        result = connection.execute("PRAGMA integrity_check").fetchone()
-        if not result or result[0] != "ok":
-            raise ValueError("SQLite 完整性检查失败")
-    finally:
-        connection.close()
+    for entry in manifest.get("databases", [{"file": snapshot.name}]):
+        connection = sqlite3.connect(folder / entry["file"])
+        try:
+            result = connection.execute("PRAGMA integrity_check").fetchone()
+            if not result or result[0] != "ok":
+                raise ValueError("SQLite 完整性检查失败")
+        finally:
+            connection.close()
     return {**manifest, "path": str(folder)}
 
 
@@ -119,6 +129,12 @@ def apply_pending_restore() -> bool:
     if settings.database_path.exists():
         shutil.copy2(settings.database_path, emergency)
     shutil.copy2(backup_path / "cost-data.sqlite3", settings.database_path)
+    for entry in manifest.get("databases", []):
+        if entry["key"] == "center":
+            continue
+        target = settings.library_paths.get(entry["key"])
+        if target:
+            shutil.copy2(backup_path / entry["file"], target)
     source_raw = backup_path / "raw"
     if source_raw.exists():
         shutil.copytree(source_raw, settings.raw_dir, dirs_exist_ok=True)

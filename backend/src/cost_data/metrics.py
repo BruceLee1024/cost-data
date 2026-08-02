@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from decimal import Decimal, ROUND_HALF_UP
 
-from sqlalchemy import delete, func, or_, select
+from sqlalchemy import delete, func, select
 from sqlalchemy.orm import Session
 
 from cost_data.fixedpoint import DEFAULT_SCALE, from_scaled, to_scaled
 from cost_data.models import CostItem, Project, ProjectMetric, ProjectVersion, ResourceItem
 from cost_data.schemas import DecimalValue, MetricRead
+from cost_data.unit_conversion import converted_value
 
 
 def _divide(numerator: int | None, numerator_scale: int, denominator: int | None, denominator_scale: int) -> int | None:
@@ -33,18 +34,10 @@ def calculate_metrics(session: Session, version_id: str) -> list[ProjectMetric]:
             CostItem.status == "active",
         )
     )
-    steel_quantity = session.scalar(
-        select(func.sum(ResourceItem.quantity_value)).where(
-            ResourceItem.project_version_id == version_id,
-            ResourceItem.name.like("%钢筋%"),
-        )
-    )
-    concrete_quantity = session.scalar(
-        select(func.sum(ResourceItem.quantity_value)).where(
-            ResourceItem.project_version_id == version_id,
-            or_(ResourceItem.name.like("%混凝土%"), ResourceItem.name.like("%商品砼%")),
-        )
-    )
+    steel_values = [converted_value(session, item.quantity_value, item.quantity_scale, item.unit, "kg") for item in session.scalars(select(ResourceItem).where(ResourceItem.project_version_id == version_id, ResourceItem.name.like("%钢筋%"))).all()]
+    concrete_values = [converted_value(session, item.quantity_value, item.quantity_scale, item.unit, "m3") for item in session.scalars(select(ResourceItem).where(ResourceItem.project_version_id == version_id, (ResourceItem.name.like("%混凝土%") | ResourceItem.name.like("%商品砼%")))).all()]
+    steel_quantity = sum(value for value in steel_values if value is not None) or None
+    concrete_quantity = sum(value for value in concrete_values if value is not None) or None
     definitions = [
         ("cost_per_area", "单方造价", total_cost, "元/m2", "清单合价合计 ÷ 建筑面积"),
         ("steel_per_area", "钢筋含量", steel_quantity, "kg/m2", "钢筋资源数量合计 ÷ 建筑面积"),
@@ -60,7 +53,7 @@ def calculate_metrics(session: Session, version_id: str) -> list[ProjectMetric]:
             scale=DEFAULT_SCALE,
             unit=unit,
             formula=formula,
-            numerator_source={"type": "aggregate", "value": from_scaled(numerator, DEFAULT_SCALE)},
+            numerator_source={"type": "aggregate", "value": from_scaled(numerator, DEFAULT_SCALE), "excluded_unconvertible": (sum(value is None for value in steel_values) if code == "steel_per_area" else sum(value is None for value in concrete_values) if code == "concrete_per_area" else 0)},
             denominator_source={"type": "project_area", "value": from_scaled(project.area_value, project.area_scale)},
             status="calculated" if project.area_value else "missing_denominator",
         )
@@ -81,4 +74,3 @@ def serialize_metric(metric: ProjectMetric) -> MetricRead:
         denominator_source=metric.denominator_source,
         status=metric.status,
     )
-
