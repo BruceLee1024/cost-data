@@ -1,6 +1,13 @@
 # 工程造价数据库管理平台
 
-**标签**：`工程造价` `造价数据库` `清单编制` `Excel 导入` `数据治理` `FastAPI` `React` `AI`
+![status](https://img.shields.io/badge/status-technical_preview-2ea44f?style=flat-square)
+![frontend](https://img.shields.io/badge/frontend-React%20%2B%20TypeScript-3178c6?style=flat-square)
+![storage](https://img.shields.io/badge/storage-SQLite-003b57?style=flat-square)
+![backend](https://img.shields.io/badge/backend-FastAPI-009688?style=flat-square)
+![AI](https://img.shields.io/badge/AI-optional%20DeepSeek-f59e0b?style=flat-square)
+![deployment](https://img.shields.io/badge/deployment-Vercel-000000?style=flat-square)
+
+**项目标签：** <kbd>工程造价</kbd> <kbd>造价数据库</kbd> <kbd>清单编制</kbd> <kbd>Excel 导入</kbd> <kbd>数据治理</kbd> <kbd>项目指标</kbd> <kbd>清单匹配</kbd> <kbd>本地优先</kbd> <kbd>FastAPI</kbd> <kbd>React</kbd> <kbd>AI 助手</kbd>
 
 面向个人工程造价师的 AI 驱动、本地优先的工程造价数据管理与清单编制工作台。
 
