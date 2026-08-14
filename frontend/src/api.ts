@@ -19,6 +19,7 @@ export type Rule = { id: string; rule_type: string; source_value: string; target
 export type Backup = { id: string; path: string; kind: string; created_at: string; database_sha256: string; file_count: number; status: string }
 
 let token = typeof sessionStorage === 'undefined' ? '' : sessionStorage.getItem('cost-data-token') || ''
+let refreshPromise: Promise<string> | undefined
 export const isStaticDemo = import.meta.env.VITE_STATIC_DEMO === 'true'
 
 function staticDemoResponse(path: string): unknown {
@@ -40,13 +41,37 @@ function staticDemoResponse(path: string): unknown {
 
 export async function request<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   if (isStaticDemo) return staticDemoResponse(path) as T
-  const headers = new Headers(init.headers)
-  if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
-  if (token) headers.set('X-Cost-Data-Token', token)
-  const response = await fetch(`/api/v1${path}`, { ...init, headers })
+  const send = () => {
+    const headers = new Headers(init.headers)
+    if (init.body && !(init.body instanceof FormData)) headers.set('Content-Type', 'application/json')
+    if (token) headers.set('X-Cost-Data-Token', token)
+    return fetch(`/api/v1${path}`, { ...init, headers })
+  }
+  let response = await send()
   const body = response.headers.get('content-type')?.includes('json') ? await response.json() : null
+  if (response.status === 403 && body?.error?.code === 'INVALID_SESSION') {
+    await refreshSessionToken()
+    response = await send()
+    const retryBody = response.headers.get('content-type')?.includes('json') ? await response.json() : null
+    if (!response.ok) throw new Error(retryBody?.error?.message || retryBody?.detail || `请求失败 (${response.status})`)
+    return retryBody as T
+  }
   if (!response.ok) throw new Error(body?.error?.message || body?.detail || `请求失败 (${response.status})`)
   return body as T
+}
+
+async function refreshSessionToken() {
+  if (!refreshPromise) {
+    refreshPromise = fetch('/api/v1/health')
+      .then(async response => {
+        const health = await response.json() as { session_token: string }
+        token = health.session_token
+        if (typeof sessionStorage !== 'undefined') sessionStorage.setItem('cost-data-token', token)
+        return token
+      })
+      .finally(() => { refreshPromise = undefined })
+  }
+  return refreshPromise
 }
 
 export async function bootstrap() {

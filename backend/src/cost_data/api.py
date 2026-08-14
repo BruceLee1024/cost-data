@@ -318,9 +318,9 @@ async def create_import(
         raise HTTPException(status_code=422, detail=f"项目元数据无效：{exc}") from exc
     if not files:
         raise HTTPException(status_code=422, detail="至少选择一个 Excel 文件")
-    invalid = [file.filename for file in files if Path(file.filename or "").suffix.lower() not in {".xlsx", ".xlsm"}]
+    invalid = [file.filename for file in files if Path(file.filename or "").suffix.lower() not in {".xls", ".xlsx", ".xlsm"}]
     if invalid:
-        raise HTTPException(status_code=422, detail=f"暂不支持以下文件：{', '.join(invalid)}")
+        raise HTTPException(status_code=422, detail=f"暂不支持以下文件：{', '.join(invalid)}；目前支持 .xls、.xlsx、.xlsm")
     project = session.get(Project, project_id) if project_id else None
     if project_id and not project:
         raise HTTPException(status_code=404, detail="项目不存在")

@@ -10,6 +10,8 @@ from typing import Any
 
 from openpyxl import load_workbook
 from openpyxl.cell.cell import Cell
+from openpyxl.utils import get_column_letter
+import xlrd
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -139,6 +141,61 @@ def _header_value(worksheet: Any, anchors: dict[tuple[int, int], tuple[int, int]
     return _cell_text(worksheet.cell(*anchor).value)
 
 
+class _XlsCell:
+    def __init__(self, value: Any, row: int, column: int) -> None:
+        self.value = value
+        self.coordinate = f"{get_column_letter(column)}{row}"
+
+
+class _XlsMergedRange:
+    def __init__(self, bounds: tuple[int, int, int, int]) -> None:
+        row_start, row_end, col_start, col_end = bounds
+        self.min_row, self.max_row = row_start + 1, row_end
+        self.min_col, self.max_col = col_start + 1, col_end
+
+
+class _XlsMergedCells:
+    def __init__(self, ranges: list[tuple[int, int, int, int]]) -> None:
+        self.ranges = [_XlsMergedRange(bounds) for bounds in ranges]
+
+
+class _XlsWorksheet:
+    def __init__(self, sheet: Any) -> None:
+        self._sheet = sheet
+        self.title = sheet.name
+        self.max_row = sheet.nrows
+        self.max_column = sheet.ncols
+        self.merged_cells = _XlsMergedCells(sheet.merged_cells)
+
+    def cell(self, row: int, column: int) -> _XlsCell:
+        value = self._sheet.cell_value(row - 1, column - 1) if row <= self.max_row and column <= self.max_column else None
+        return _XlsCell(value, row, column)
+
+    def iter_rows(self, min_row: int = 1, values_only: bool = False):
+        for row in range(min_row, self.max_row + 1):
+            values = tuple(self._sheet.cell_value(row - 1, col) for col in range(self.max_column))
+            yield values if values_only else tuple(_XlsCell(value, row, col + 1) for col, value in enumerate(values))
+
+
+class _XlsWorkbook:
+    def __init__(self, path: Path) -> None:
+        self._book = xlrd.open_workbook(str(path), formatting_info=False)
+        self.worksheets = [_XlsWorksheet(sheet) for sheet in self._book.sheets()]
+        self.sheetnames = [sheet.title for sheet in self.worksheets]
+
+    def __getitem__(self, name: str) -> _XlsWorksheet:
+        return next(sheet for sheet in self.worksheets if sheet.title == name)
+
+    def close(self) -> None:
+        return None
+
+
+def _load_workbook(path: Path, *, read_only: bool, data_only: bool) -> Any:
+    if path.suffix.lower() == ".xls":
+        return _XlsWorkbook(path)
+    return load_workbook(path, read_only=read_only, data_only=data_only, keep_links=False)
+
+
 def _header_rows(worksheet: Any, header_row: int, anchors: dict[tuple[int, int], tuple[int, int]]) -> list[int]:
     rows = [header_row]
     for row_no in range(header_row - 1, max(header_row - 5, 0), -1):
@@ -181,7 +238,7 @@ def _inspect_sheet(worksheet: Any) -> ParsedTable | None:
 
 
 def inspect_workbook(path: Path) -> tuple[list[str], list[ParsedTable]]:
-    workbook = load_workbook(path, read_only=False, data_only=False, keep_links=False)
+    workbook = _load_workbook(path, read_only=False, data_only=False)
     tables: list[ParsedTable] = []
     sheet_names = list(workbook.sheetnames)
     try:
@@ -369,8 +426,8 @@ def _parse_table(
     table: ParsedTable,
     pending_analysis: list[dict[str, Any]],
 ) -> int:
-    values_book = load_workbook(path, read_only=True, data_only=True, keep_links=False)
-    formula_book = load_workbook(path, read_only=False, data_only=False, keep_links=False)
+    values_book = _load_workbook(path, read_only=True, data_only=True)
+    formula_book = _load_workbook(path, read_only=False, data_only=False)
     count = 0
     try:
         values_sheet = values_book[table.sheet_name]
@@ -663,7 +720,7 @@ def process_import_job(job_id: str) -> None:
                         "error",
                         "WORKBOOK_READ_FAILED",
                         f"工作簿读取失败：{exc}",
-                        action="确认文件未损坏且格式为 xlsx 或 xlsm",
+                        action="确认文件未损坏且格式为 xls、xlsx 或 xlsm",
                     )
                 job.processed_files = position
                 job.progress = int(position / max(len(files), 1) * 85)
