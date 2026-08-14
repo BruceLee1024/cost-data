@@ -181,6 +181,11 @@ class SearchIntent(APIModel):
     specification: str | None = None
     price_min: str | None = None
     price_max: str | None = None
+    tax_inclusion: str | None = None
+    price_type: str | None = None
+    price_source_status: Literal["complete", "incomplete"] | None = None
+    reference_scope: Literal["available", "restricted", "all"] | None = None
+    sort_by: Literal["reference", "unit_price", "quantity", "pricing_date"] = "reference"
     data_type: Literal["bill", "quota", "resource", "measure", "fee_rate", "metric", "all"] = "all"
     resource_kind: Literal["labor", "material", "machine"] | None = None
     data_status: Literal["raw", "parsed", "reviewed", "published", "deprecated", "restricted"] | None = None
@@ -308,6 +313,8 @@ class WorkspaceRecord(APIModel):
 class WorkspaceSearchResult(APIModel):
     items: list[WorkspaceRecord]
     total: int
+    available_count: int = 0
+    restricted_count: int = 0
 
 
 class LibrarySummary(APIModel):

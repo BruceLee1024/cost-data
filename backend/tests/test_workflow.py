@@ -303,6 +303,12 @@ def test_phase_one_workspace_profile_quality_and_master_data() -> None:
     assert catalog.status_code == 200
     catalog_item = catalog.json()["items"][0]
     assert catalog_item["library"] == "catalog"
+    reference_search = client.get("/api/v1/libraries/catalog/search", params={"query": "C30", "reference_scope": "available", "specialty": "土建", "pricing_date_from": "2026-01", "pricing_date_to": "2026-12", "tax_inclusion": "含税", "price_min": "600", "sort_by": "unit_price"})
+    assert reference_search.status_code == 200, reference_search.text
+    assert reference_search.json()["total"] == 1
+    assert reference_search.json()["available_count"] == 1
+    assert reference_search.json()["restricted_count"] == 0
+    assert reference_search.json()["items"][0]["description"] == "混凝土强度等级 C30"
     detail = client.get(f"/api/v1/libraries/catalog/records/{catalog_item['id']}")
     assert detail.status_code == 200
     assert detail.json()["source"]["file_name"] == "首期.xlsx"

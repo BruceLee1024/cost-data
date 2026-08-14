@@ -7,6 +7,7 @@ cross-database foreign keys; the service layer resolves those references on read
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal, InvalidOperation
 from typing import Any, Literal
 
 from sqlalchemy import BigInteger, JSON, String, create_engine, delete, select
@@ -135,13 +136,29 @@ def _allowed(record: LibraryRecord, project: Project, intent: Any) -> bool:
     if intent.project_type and project.project_type != intent.project_type: return False
     if intent.pricing_mode and project.pricing_mode != intent.pricing_mode: return False
     if intent.result_stage and project.result_stage != intent.result_stage: return False
+    if intent.pricing_date_from and project.pricing_date < intent.pricing_date_from: return False
+    if intent.pricing_date_to and project.pricing_date > intent.pricing_date_to: return False
     if intent.unit and record.unit != intent.unit: return False
     if intent.resource_kind and record.payload.get("kind") != intent.resource_kind: return False
     if intent.data_status == "published" and record.payload.get("data_status") not in {None, "published"}:
         return False
     if intent.data_status == "restricted" and project.price_context.get("tax_inclusion") and project.price_context.get("price_type") and project.price_context.get("price_source"):
         return False
-    if intent.query and intent.query.lower() not in " ".join(filter(None, [record.name, record.code, record.specification])).lower(): return False
+    if intent.tax_inclusion and project.price_context.get("tax_inclusion") != intent.tax_inclusion: return False
+    if intent.price_type and project.price_context.get("price_type") != intent.price_type: return False
+    complete_price = all(project.price_context.get(field) for field in ("tax_inclusion", "price_type", "price_source"))
+    if intent.price_source_status == "complete" and not complete_price: return False
+    if intent.price_source_status == "incomplete" and complete_price: return False
+    comparable = comparability(project)
+    if intent.reference_scope == "available" and comparable == "restricted": return False
+    if intent.reference_scope == "restricted" and comparable != "restricted": return False
+    try:
+        unit_price = Decimal(record.unit_price_value or 0) / (Decimal(10) ** record.unit_price_scale)
+        if intent.price_min and unit_price < Decimal(intent.price_min): return False
+        if intent.price_max and unit_price > Decimal(intent.price_max): return False
+    except (InvalidOperation, ValueError):
+        return False
+    if intent.query and intent.query.lower() not in " ".join(filter(None, [record.name, record.code, record.specification, str(record.payload.get("description") or "")])).lower(): return False
     return True
 
 

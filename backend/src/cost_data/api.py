@@ -565,9 +565,20 @@ def library_search(library: str, session: DB, intent: Annotated[SearchIntent, Qu
     expected = {"catalog": "bill", "resource": "resource", "quota": "quota"}[library]
     if intent.data_type not in {"all", expected}:
         return WorkspaceSearchResult(items=[], total=0)
-    records = [_library_workspace_record(library, row, project, source) for row, project, source in search_library(session, library, intent)]
-    records.sort(key=lambda record: (record.pricing_date, record.project_name, record.name), reverse=True)
-    return WorkspaceSearchResult(items=records[intent.offset:intent.offset + intent.limit], total=len(records))
+    base_intent = intent.model_copy(update={"reference_scope": "all"})
+    all_records = [_library_workspace_record(library, row, project, source) for row, project, source in search_library(session, library, base_intent)]
+    available_count = sum(record.comparability != "restricted" for record in all_records)
+    restricted_count = len(all_records) - available_count
+    records = [record for record in all_records if intent.reference_scope in {None, "all"} or (intent.reference_scope == "available" and record.comparability != "restricted") or (intent.reference_scope == "restricted" and record.comparability == "restricted")]
+    if intent.sort_by == "unit_price":
+        records.sort(key=lambda record: float(record.unit_price.value or -1), reverse=True)
+    elif intent.sort_by == "quantity":
+        records.sort(key=lambda record: float(record.quantity.value or -1), reverse=True)
+    else:
+        records.sort(key=lambda record: (record.pricing_date, record.project_name, record.name), reverse=True)
+        if intent.sort_by == "reference":
+            records.sort(key=lambda record: record.comparability == "restricted")
+    return WorkspaceSearchResult(items=records[intent.offset:intent.offset + intent.limit], total=len(records), available_count=available_count, restricted_count=restricted_count)
 
 
 @router.get("/libraries/{library}/records/{record_id}", response_model=LibraryRecordRead)

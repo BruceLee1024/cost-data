@@ -1,0 +1,36 @@
+/* Shared native form controls: consistent selection affordance without replacing browser accessibility. */
+.ui-select,
+.ui-input,
+.ui-textarea {
+  width: 100%;
+  border: 1px solid var(--strong);
+  border-radius: 5px;
+  background-color: #fff;
+  color: var(--ink);
+  transition: border-color .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+
+.ui-select {
+  appearance: none;
+  min-height: 34px;
+  padding: 0 30px 0 9px;
+  background-color: #fff !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23596762' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 8px center !important;
+  background-size: 14px !important;
+}
+
+.ui-input { min-height: 34px; padding: 0 9px; }
+.ui-textarea { min-height: 96px; padding: 9px; resize: vertical; line-height: 1.5; }
+.ui-select:hover:not(:disabled),.ui-input:hover:not(:disabled),.ui-textarea:hover:not(:disabled) { border-color: #87958f; background-color: #fcfdfc; }
+.ui-select:focus-visible,.ui-input:focus-visible,.ui-textarea:focus-visible { outline: 0; border-color: var(--accent); box-shadow: 0 0 0 3px rgb(20 108 90 / 15%); }
+.ui-select:disabled { cursor: not-allowed; color: var(--muted); background-color: #f2f5f3; }
+
+/* Advanced catalog filters use the same compact control token as the primary toolbar. */
+.library-page .advanced-filters .ui-select,
+.library-page .advanced-filters .ui-input {
+  height: 34px !important;
+  min-height: 34px;
+  max-height: 34px;
+}
