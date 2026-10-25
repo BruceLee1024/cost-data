@@ -6,6 +6,7 @@ import './styles.css'
 import './extra.css'
 import './catalog-filters.css'
 import './form-controls.css'
+import './workspace.css'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, staleTime: 15_000 } } })
 ReactDOM.createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={queryClient}><App /></QueryClientProvider></React.StrictMode>)
